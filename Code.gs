@@ -242,7 +242,7 @@ function getCheckedOutTools(params) {
 function historyByEmployee(params) {
   const employee = params.employee;
   const sheet = getSheet(SHEET_LOG);
-  const rows = sheetToObjects(sheet, ['Timestamp','ToolID','ToolName','Category','Employee','CheckedOutAt','CheckedInAt','EventType']);
+  const rows = sheetToObjects(sheet);
 
   const records = rows
     .filter(r => String(r['Employee']).trim() === employee && r['EventType'] === 'checkout')
@@ -262,7 +262,7 @@ function historyByEmployee(params) {
 function historyByTool(params) {
   const query = String(params.query || '').toLowerCase().trim();
   const sheet = getSheet(SHEET_LOG);
-  const rows = sheetToObjects(sheet, ['Timestamp','ToolID','ToolName','Category','Employee','CheckedOutAt','CheckedInAt','EventType']);
+  const rows = sheetToObjects(sheet);
 
   const records = rows
     .filter(r => r['EventType'] === 'checkout' &&
