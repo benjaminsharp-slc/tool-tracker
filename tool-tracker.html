@@ -81,12 +81,16 @@
     height: 48px;
     width: auto;
     flex-shrink: 0;
+    max-width: 160px;
+    object-fit: contain;
     filter: invert(1); /* inverts dark logo to white for dark header — remove if logo is already light */
   }
   .header-divider {
     width: 1px; height: 36px;
     background: rgba(255,255,255,0.25);
     flex-shrink: 0;
+    max-width: 160px;
+    object-fit: contain;
   }
   .header-title {
     font-family: 'Barlow Condensed', sans-serif;
@@ -266,7 +270,7 @@
 
   @media (max-width: 600px) {
     header { flex-wrap: wrap; gap: 10px; }
-    .header-logo { height: 36px; }
+    .header-logo { height: 36px; max-width: 120px; }
     .row2, .row3 { grid-template-columns: 1fr; }
     nav button { padding: 10px 12px; font-size: 13px; }
     .results-table { font-size: 12px; }
@@ -288,7 +292,9 @@
     cursor: pointer; font-size: 17px; color: var(--text-muted);
     display: flex; align-items: center; justify-content: center;
     transition: border-color 0.15s, color 0.15s;
-    flex-shrink: 0; align-self: flex-end;
+    flex-shrink: 0;
+    max-width: 160px;
+    object-fit: contain; align-self: flex-end;
   }
   .btn-remove:hover { border-color: var(--status-out-text); color: var(--status-out-text); }
 
