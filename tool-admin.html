@@ -564,7 +564,12 @@ async function loadCategories() {
     const listSel = document.getElementById('list-cat');
     listSel.innerHTML = '<option value="">All</option>';
     categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; listSel.appendChild(o); });
-  } catch(e) { showToast('Could not load categories: ' + e.message, 'error'); }
+  } catch(e) {
+    const addSel = document.getElementById('add-category');
+    if (addSel) addSel.innerHTML = '<option value="">⚠ Error loading — check URL</option>';
+    console.error('loadCategories failed:', e);
+    showToast('Could not load categories: ' + e.message, 'error');
+  }
   // Run separately so a failure here never blocks the category dropdown
   suggestNextId();
 }
