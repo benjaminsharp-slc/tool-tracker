@@ -136,7 +136,7 @@ function getAllTools() {
   const tools = rows
     .filter(r => String(r['ToolID'] || '').trim() !== '')
     .map(r => ({
-      id:           String(r['ToolID']         || '').trim(),
+      id:           (n => !isNaN(n) ? String(n).padStart(6,'0') : raw)(parseInt((String(r['ToolID']||'').trim()).replace(/\D/g,''),10)),
       name:         String(r['Name']           || '').trim(),
       category:     String(r['Category']       || '').trim(),
       status:       String(r['Status']         || 'in').toLowerCase(),
@@ -151,13 +151,18 @@ function getAllTools() {
 // ── checkToolId ───────────────────────────────────────────────────────
 // Returns { exists, name, category } for duplicate checking
 function checkToolId(params) {
-  const toolId = String(params.toolId || '').trim().toUpperCase();
+  const toolId = String(params.toolId || '').trim();
+  const toolIdNum = parseInt(toolId.replace(/\D/g, ''), 10);
   const sheet = getSheet(SHEET_TOOLS);
   const rows = sheetToObjects(sheet);
 
-  const match = rows.find(r =>
-    String(r['ToolID'] || '').trim().toUpperCase() === toolId
-  );
+  const match = rows.find(r => {
+    const existing = String(r['ToolID'] || '').trim();
+    const existingNum = parseInt(existing.replace(/\D/g, ''), 10);
+    // Compare numerically if both parse as numbers, otherwise string match
+    if (!isNaN(toolIdNum) && !isNaN(existingNum)) return toolIdNum === existingNum;
+    return existing.toUpperCase() === toolId.toUpperCase();
+  });
   if (match) return { exists: true, name: match['Name'], category: match['Category'] };
   return { exists: false };
 }

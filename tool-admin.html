@@ -406,9 +406,9 @@
       <div class="card-title">Tool Details</div>
       <div class="row3">
         <div class="field">
-          <label>Tool ID <span style="font-size:10px;color:var(--text-muted)">(auto-generated)</span></label>
-          <input type="text" id="add-id" placeholder="Leave blank to auto-assign" oninput="clearIdError()">
-          <div class="field-hint" id="id-hint">Auto-filled from next available ID. You may override.</div>
+          <label>Tool ID</label>
+          <div id="add-id-display" style="padding:9px 11px;border:1.5px solid var(--border-default);border-radius:7px;background:#F9FAFB;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text-muted);">Calculating…</div>
+          <div class="field-hint" id="id-hint">Auto-assigned. Cannot be edited.</div>
         </div>
         <div class="field">
           <label>Category</label>
@@ -588,50 +588,49 @@ async function suggestNextId() {
 }
 
 // ── Add Tool ──────────────────────────────────────────
+// Returns the next available numeric ID as a zero-padded 6-digit string
+// Compares numerically so sheet value 1 and "000001" are treated as the same
+function calcNextId() {
+  const nums = [
+    ...queue.map(q => parseInt(String(q.id).replace(/\D/g,''), 10)),
+    ...allTools.map(t => parseInt(String(t.id||'').replace(/\D/g,''), 10))
+  ].filter(n => !isNaN(n) && n > 0);
+  return String(nums.length ? Math.max(...nums) + 1 : 1).padStart(6, '0');
+}
+
+function refreshIdDisplay() {
+  const el = document.getElementById('add-id-display');
+  if (el) el.textContent = calcNextId();
+}
+
 async function submitAddTool() {
-  let toolId     = document.getElementById('add-id').value.trim();
   const category = document.getElementById('add-category').value;
   const name     = document.getElementById('add-name').value.trim();
   if (!category || !name) { showToast('Please fill in category and name.', 'error'); return; }
-  // Auto-generate ID if blank: find max of queue + allTools
-  if (!toolId) {
-    const queueNums = queue.map(q => parseInt(String(q.id).replace(/\D/g,''),10)).filter(n=>!isNaN(n));
-    const toolNums  = allTools.map(t => parseInt(String(t.id||'').replace(/\D/g,''),10)).filter(n=>!isNaN(n));
-    const allNums   = [...queueNums, ...toolNums];
-    const next      = allNums.length ? Math.max(...allNums) + 1 : 1;
-    toolId          = String(next).padStart(6, '0');
-    document.getElementById('add-id').value = toolId;
-  }
-  if (queue.some(q => q.id === toolId)) { markIdError('Already in your queue above.'); return; }
+
+  const toolId = calcNextId();
 
   const btn = document.getElementById('add-submit');
   btn.disabled = true; btn.textContent = 'Checking…';
   try {
     const check = await api({ action: 'checkToolId', toolId });
-    if (check.exists) { markIdError('ID already exists: "' + check.name + '" (' + check.category + ')'); btn.disabled = false; btn.textContent = 'Add to Queue'; return; }
+    if (check.exists) {
+      // Sheet has a tool with this numeric ID — force allTools to reload then retry
+      showToast('ID conflict detected, refreshing tool list…', 'warn');
+      const d = await api({ action: 'getAllTools' });
+      allTools = d.tools || [];
+      btn.disabled = false; btn.textContent = 'Add to Queue';
+      refreshIdDisplay();
+      return;
+    }
   } catch(e) { showToast('Could not verify ID: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Add to Queue'; return; }
 
   queue.push({ id: toolId, name, category });
   renderQueue();
   document.getElementById('add-name').value = '';
-  // Suggest next ID
-  const nums = queue.map(q => parseInt(q.id.replace(/\D/g, ''), 10)).concat(
-    allTools.map(t => parseInt(t.id.replace(/\D/g, ''), 10))
-  ).filter(n => !isNaN(n));
-  const next = nums.length ? Math.max(...nums) + 1 : 1;
-  document.getElementById('add-id').value = String(next).padStart(6, '0');
-  clearIdError();
+  refreshIdDisplay();
   document.getElementById('add-name').focus();
   btn.disabled = false; btn.textContent = 'Add to Queue';
-}
-
-function markIdError(msg) {
-  document.getElementById('add-id').classList.add('error-field');
-  const h = document.getElementById('id-hint'); h.textContent = msg; h.classList.add('error');
-}
-function clearIdError() {
-  document.getElementById('add-id').classList.remove('error-field');
-  const h = document.getElementById('id-hint'); h.textContent = 'Auto-filled from next available ID. You may override.'; h.classList.remove('error');
 }
 
 function renderQueue() {
@@ -668,6 +667,7 @@ async function loadList() {
     const d = await api({ action: 'getAllTools' });
     allTools = d.tools || [];
     renderList();
+    refreshIdDisplay();
   } catch(e) {
     document.getElementById('list-container').innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>';
   }
