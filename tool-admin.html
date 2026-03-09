@@ -407,7 +407,7 @@
       <div class="row3">
         <div class="field">
           <label>Tool ID <span style="font-size:10px;color:var(--text-muted)">(auto-generated)</span></label>
-          <input type="text" id="add-id" placeholder="e.g. 000043" oninput="clearIdError()">
+          <input type="text" id="add-id" placeholder="Leave blank to auto-assign" oninput="clearIdError()">
           <div class="field-hint" id="id-hint">Auto-filled from next available ID. You may override.</div>
         </div>
         <div class="field">
@@ -570,8 +570,6 @@ async function loadCategories() {
     console.error('loadCategories failed:', e);
     showToast('Could not load categories: ' + e.message, 'error');
   }
-  // Run separately so a failure here never blocks the category dropdown
-  suggestNextId();
 }
 
 async function suggestNextId() {
@@ -591,10 +589,19 @@ async function suggestNextId() {
 
 // ── Add Tool ──────────────────────────────────────────
 async function submitAddTool() {
-  const toolId   = document.getElementById('add-id').value.trim();
+  let toolId     = document.getElementById('add-id').value.trim();
   const category = document.getElementById('add-category').value;
   const name     = document.getElementById('add-name').value.trim();
-  if (!toolId || !category || !name) { showToast('Please fill in all three fields.', 'error'); return; }
+  if (!category || !name) { showToast('Please fill in category and name.', 'error'); return; }
+  // Auto-generate ID if blank: find max of queue + allTools
+  if (!toolId) {
+    const queueNums = queue.map(q => parseInt(String(q.id).replace(/\D/g,''),10)).filter(n=>!isNaN(n));
+    const toolNums  = allTools.map(t => parseInt(String(t.id||'').replace(/\D/g,''),10)).filter(n=>!isNaN(n));
+    const allNums   = [...queueNums, ...toolNums];
+    const next      = allNums.length ? Math.max(...allNums) + 1 : 1;
+    toolId          = String(next).padStart(6, '0');
+    document.getElementById('add-id').value = toolId;
+  }
   if (queue.some(q => q.id === toolId)) { markIdError('Already in your queue above.'); return; }
 
   const btn = document.getElementById('add-submit');
