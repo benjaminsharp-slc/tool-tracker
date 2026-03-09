@@ -554,10 +554,22 @@ let categories = [], allTools = [], queue = [];
 let sortCol = 'id', sortAsc = true;
 let modalToolId = null, selectedStatus = null;
 
-window.onload = async () => {
+window.onload = () => {
   if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL') document.getElementById('configWarning').classList.add('show');
-  await loadCategories();
+  // Fire both independently — neither blocks the other
+  loadCategories();
+  loadAllToolsSilent();
 };
+
+async function loadAllToolsSilent() {
+  try {
+    const d = await api({ action: 'getAllTools' });
+    allTools = d.tools || [];
+    refreshIdDisplay();
+  } catch(e) {
+    // Non-fatal — ID display will populate after first queue add
+  }
+}
 
 function showPage(name, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
