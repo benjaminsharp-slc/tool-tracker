@@ -564,22 +564,24 @@ async function loadCategories() {
     const listSel = document.getElementById('list-cat');
     listSel.innerHTML = '<option value="">All</option>';
     categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; listSel.appendChild(o); });
-    // Auto-generate next ID
-    await suggestNextId();
   } catch(e) { showToast('Could not load categories: ' + e.message, 'error'); }
+  // Run separately so a failure here never blocks the category dropdown
+  suggestNextId();
 }
 
 async function suggestNextId() {
   try {
     const d = await api({ action: 'getAllTools' });
     const tools = d.tools || [];
-    // Extract numeric IDs, find max
-    const nums = tools.map(t => parseInt(t.id.replace(/\D/g, ''), 10)).filter(n => !isNaN(n));
+    const nums = tools
+      .map(t => parseInt(String(t.id || t.ToolID || '').replace(/\D/g, ''), 10))
+      .filter(n => !isNaN(n) && n > 0);
     const next = nums.length ? Math.max(...nums) + 1 : 1;
-    const nextId = String(next).padStart(6, '0');
     const field = document.getElementById('add-id');
-    if (!field.value) field.value = nextId;
-  } catch(e) {}
+    if (field && !field.value) field.value = String(next).padStart(6, '0');
+  } catch(e) {
+    // Non-fatal — user can enter ID manually
+  }
 }
 
 // ── Add Tool ──────────────────────────────────────────
