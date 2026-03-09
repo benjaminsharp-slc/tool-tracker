@@ -717,7 +717,7 @@ function renderList() {
           <td>${t.condition || '—'}</td>
           <td class="notes-cell" title="${t.notes}">${t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40)+'…' : t.notes) : '—'}</td>
           <td style="white-space:nowrap">
-            <button class="btn-status" onclick="openModal('${t.id}', '${t.name.replace(/'/g,\"\\'\")}'  , '${t.status}')">Status</button>
+            <button class="btn-status" onclick="openModal(this)" data-id="${t.id}" data-name="${t.name}" data-status="${t.status}">Status</button>
             &nbsp;
             <button class="btn-history" onclick="jumpToHistory('${t.id}')">History</button>
           </td>
@@ -733,7 +733,10 @@ function setSort(col) {
 }
 
 // ── Status Modal ──────────────────────────────────────
-function openModal(toolId, toolName, currentStatus) {
+function openModal(btn) {
+  const toolId = btn.dataset.id;
+  const toolName = btn.dataset.name;
+  const currentStatus = btn.dataset.status;
   modalToolId = toolId; selectedStatus = currentStatus;
   document.getElementById('modal-sub').textContent = toolId + ' — ' + toolName;
   document.querySelectorAll('.status-option').forEach(el => el.classList.remove('selected'));
