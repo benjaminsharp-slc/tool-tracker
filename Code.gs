@@ -37,6 +37,7 @@ function doGet(e) {
       case 'getCheckedOutTools': result = getCheckedOutTools(e.parameter); break;
       case 'historyByEmployee':  result = historyByEmployee(e.parameter);  break;
       case 'historyByTool':      result = historyByTool(e.parameter);      break;
+      case 'fullHistory':        result = fullHistory(e.parameter);        break;
       default: result = { error: 'Unknown action: ' + action };
     }
   } catch(err) {
@@ -391,6 +392,33 @@ function historyByTool(params) {
       employee:     r['Employee'],
       checkedOutAt: r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '',
       checkedInAt:  r['CheckedInAt']  ? new Date(r['CheckedInAt']).toISOString()  : ''
+    }))
+    .reverse();
+
+  return { records };
+}
+
+// ── fullHistory ────────────────────────────────────────────────────────
+// Returns every log entry for a given tool ID or name (for admin audit tab)
+function fullHistory(params) {
+  const query = String(params.query || '').toLowerCase().trim();
+  const sheet = getSheet(SHEET_LOG);
+  const rows = sheetToObjects(sheet);
+
+  const records = rows
+    .filter(r =>
+      String(r['ToolID']).toLowerCase().includes(query) ||
+      String(r['ToolName']).toLowerCase().includes(query)
+    )
+    .map(r => ({
+      toolId:         String(r['ToolID']         || ''),
+      toolName:       String(r['ToolName']        || ''),
+      eventType:      String(r['EventType']       || ''),
+      employee:       String(r['Employee']        || ''),
+      checkedOutAt:   r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '',
+      checkedInAt:    r['CheckedInAt']  ? new Date(r['CheckedInAt']).toISOString()  : '',
+      condition:      String(r['Condition']       || ''),
+      conditionNotes: String(r['ConditionNotes']  || '')
     }))
     .reverse();
 

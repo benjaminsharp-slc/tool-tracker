@@ -3,291 +3,216 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tool Admin</title>
+<title>Tool Admin — Cowdin C&D</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+
   :root {
-    --orange: #D9541E;
-    --orange-dark: #b8441a;
-    --ink: #1a1a1a;
-    --bg: #f4f1ed;
-    --card: #ffffff;
-    --border: #ddd8d0;
-    --muted: #888;
-    --success: #2d7a4f;
-    --warn: #b8860b;
-    --error: #c0392b;
-    --header-bg: #1a1a1a;
-    --repair: #b8860b;
-    --replace: #c0392b;
-    --retired: #666;
-    --lost: #7b3fa0;
+    /* Brand colors */
+    --brand-primary: #1B3A6B;       /* deep navy - main interactive color */
+    --brand-primary-dark: #142d55;  /* darker navy - hover states */
+    --brand-accent: #2E6DA4;        /* medium blue - secondary actions */
+
+    /* UI surface colors */
+    --surface-page: #F0F2F5;        /* page background */
+    --surface-card: #FFFFFF;        /* card/panel background */
+    --surface-header: #1B3A6B;      /* top header bar */
+    --surface-nav: #162F58;         /* navigation bar */
+
+    /* Text colors */
+    --text-primary: #1a1a1a;        /* main body text */
+    --text-muted: #6B7280;          /* labels, secondary info */
+
+    /* Border */
+    --border-default: #D1D5DB;      /* standard borders */
+
+    /* Semantic status colors */
+    --status-available-bg: #E8F5EE;
+    --status-available-text: #2d7a4f;
+    --status-available-border: #b2d9c3;
+
+    --status-out-bg: #FEF2F2;
+    --status-out-text: #B91C1C;
+    --status-out-border: #FECACA;
+
+    --status-repair-bg: #FFFBEB;
+    --status-repair-text: #92400E;
+    --status-repair-border: #FDE68A;
+
+    --status-replace-bg: #FFF7ED;
+    --status-replace-text: #C2410C;
+    --status-replace-border: #FED7AA;
+
+    --status-retired-bg: #F3F4F6;
+    --status-retired-text: #4B5563;
+    --status-retired-border: #D1D5DB;
+
+    --status-lost-bg: #F5F3FF;
+    --status-lost-text: #6D28D9;
+    --status-lost-border: #DDD6FE;
+
+    /* Feedback colors */
+    --feedback-success-bg: #E8F5EE;
+    --feedback-success-text: #2d7a4f;
+    --feedback-success-border: #b2d9c3;
+
+    --feedback-error-bg: #FEF2F2;
+    --feedback-error-text: #B91C1C;
+    --feedback-error-border: #FECACA;
+
+    --feedback-warn-bg: #FFFBEB;
+    --feedback-warn-text: #92400E;
+    --feedback-warn-border: #FDE68A;
   }
+
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Barlow', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-  }
+  body { font-family: 'Barlow', sans-serif; background: var(--surface-page); color: var(--text-primary); min-height: 100vh; }
 
   header {
-    background: var(--header-bg);
+    background: var(--surface-header);
     color: white;
-    padding: 18px 24px;
+    padding: 12px 20px;
     display: flex;
-    align-items: baseline;
-    gap: 14px;
+    align-items: center;
+    gap: 16px;
   }
-  header h1 {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 26px; font-weight: 800;
-    letter-spacing: 0.04em; text-transform: uppercase;
-    color: white;
+  .header-logo {
+    height: 48px;
+    width: auto;
+    flex-shrink: 0;
+    filter: invert(1); /* inverts dark logo to white for dark header — remove if logo is already light-colored */
   }
-  header .sub {
+  .header-divider {
+    width: 1px; height: 36px;
+    background: rgba(255,255,255,0.25);
+    flex-shrink: 0;
+  }
+  .header-title {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px; font-weight: 600;
+    font-size: 20px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
+    flex: 1;
+  }
+  .header-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 600;
     letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--orange);
+    color: rgba(255,255,255,0.5);
+    display: block;
+    margin-top: 2px;
   }
-  header .back-link {
-    margin-left: auto;
+  .header-link {
     font-family: 'Barlow', sans-serif;
     font-size: 13px; font-weight: 600;
-    color: #aaa; text-decoration: none;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
     transition: color 0.15s;
+    white-space: nowrap;
   }
-  header .back-link:hover { color: white; }
+  .header-link:hover { color: white; }
 
   nav {
-    background: #242424;
+    background: var(--surface-nav);
     display: flex;
-    padding: 0 24px;
-    border-bottom: 2px solid var(--orange);
+    padding: 0 20px;
+    border-bottom: 2px solid var(--brand-accent);
+    overflow-x: auto;
   }
   nav button {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 14px; font-weight: 700;
     letter-spacing: 0.08em; text-transform: uppercase;
-    color: #aaa; background: none; border: none;
-    padding: 12px 20px; cursor: pointer;
+    color: rgba(255,255,255,0.5);
+    background: none; border: none;
+    padding: 11px 18px; cursor: pointer;
     border-bottom: 3px solid transparent;
     margin-bottom: -2px;
     transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
   }
-  nav button:hover { color: white; }
-  nav button.active { color: var(--orange); border-bottom-color: var(--orange); }
+  nav button:hover { color: rgba(255,255,255,0.85); }
+  nav button.active { color: white; border-bottom-color: var(--brand-accent); }
 
-  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
-
+  .container { max-width: 960px; margin: 0 auto; padding: 22px 18px; }
   .page { display: none; }
   .page.active { display: block; }
 
   .page-title {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px; font-weight: 800;
+    font-size: 21px; font-weight: 800;
     letter-spacing: 0.04em; text-transform: uppercase;
-    margin-bottom: 20px; color: var(--ink);
+    margin-bottom: 18px; color: var(--text-primary);
   }
 
   .card {
-    background: var(--card);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
+    background: var(--surface-card);
+    border: 1.5px solid var(--border-default);
+    border-radius: 10px;
+    padding: 18px;
     margin-bottom: 16px;
   }
   .card-title {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
     letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px; padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    margin-bottom: 14px; padding-bottom: 9px;
+    border-bottom: 1px solid var(--border-default);
   }
 
   label {
     display: block;
-    font-size: 12px; font-weight: 600;
+    font-size: 11px; font-weight: 600;
     letter-spacing: 0.05em; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 5px;
+    color: var(--text-muted); margin-bottom: 4px;
   }
-
-  select, input[type="text"] {
-    width: 100%; padding: 10px 12px;
-    border: 1.5px solid var(--border); border-radius: 8px;
-    font-family: 'Barlow', sans-serif; font-size: 15px;
-    color: var(--ink); background: white; appearance: none;
+  select, input[type="text"], input[type="date"], textarea {
+    width: 100%; padding: 9px 11px;
+    border: 1.5px solid var(--border-default); border-radius: 7px;
+    font-family: 'Barlow', sans-serif; font-size: 14px;
+    color: var(--text-primary); background: white; appearance: none;
     transition: border-color 0.15s;
   }
-  select:focus, input:focus { outline: none; border-color: var(--orange); }
-  input.error-field { border-color: var(--error); }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--brand-primary); }
 
-  .field { margin-bottom: 14px; }
-  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-  .field-hint {
-    font-size: 11px; color: var(--muted);
-    margin-top: 4px;
-  }
-  .field-hint.error { color: var(--error); font-weight: 600; }
+  .field { margin-bottom: 13px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 13px; }
 
   .btn-primary {
-    display: block; width: 100%; padding: 15px;
-    background: var(--orange); color: white; border: none;
-    border-radius: 10px;
+    display: block; width: 100%; padding: 14px;
+    background: var(--brand-primary); color: white; border: none;
+    border-radius: 9px;
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px; font-weight: 700;
+    font-size: 18px; font-weight: 700;
     letter-spacing: 0.06em; text-transform: uppercase;
-    cursor: pointer; transition: background 0.15s;
-    margin-top: 4px;
+    cursor: pointer; transition: background 0.15s; margin-top: 4px;
   }
-  .btn-primary:hover { background: var(--orange-dark); }
-  .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-primary:hover { background: var(--brand-primary-dark); }
+  .btn-primary:disabled { background: #9CA3AF; cursor: not-allowed; }
 
   .btn-secondary {
-    padding: 9px 18px;
-    background: white; border: 1.5px solid var(--border);
-    border-radius: 8px;
+    padding: 8px 16px;
+    background: white; border: 1.5px solid var(--border-default);
+    border-radius: 7px;
     font-family: 'Barlow', sans-serif;
-    font-size: 14px; font-weight: 600;
-    cursor: pointer; color: var(--ink);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; color: var(--text-primary);
     transition: border-color 0.15s;
   }
-  .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
-
-  /* Tool list table */
-  .toolbar {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 14px; flex-wrap: wrap;
-  }
-  .toolbar .field { margin-bottom: 0; flex: 1; min-width: 160px; }
-
-  .results-table {
-    width: 100%; border-collapse: collapse; font-size: 14px;
-  }
-  .results-table th {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--muted); text-align: left;
-    padding: 8px 12px;
-    border-bottom: 1.5px solid var(--border);
-    cursor: pointer; user-select: none;
-    white-space: nowrap;
-  }
-  .results-table th:hover { color: var(--orange); }
-  .results-table th .sort-arrow { margin-left: 4px; opacity: 0.4; }
-  .results-table th.sorted .sort-arrow { opacity: 1; color: var(--orange); }
-
-  .results-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #f0ece6;
-    vertical-align: middle;
-  }
-  .results-table tr:last-child td { border-bottom: none; }
-  .results-table tr:hover td { background: #faf9f7; }
-
-  .badge-id {
-    display: inline-block; background: #f0ece6;
-    border-radius: 5px; padding: 2px 8px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; font-weight: 700;
-    letter-spacing: 0.04em; color: var(--ink);
-  }
-
-  /* Status badges */
-  .status-badge {
-    display: inline-block; border-radius: 5px;
-    padding: 2px 8px; font-size: 12px; font-weight: 600;
-    white-space: nowrap;
-  }
-  .status-in       { background: #e8f5ee; color: var(--success); }
-  .status-out      { background: #fdecea; color: var(--error); }
-  .status-repair   { background: #fef9e7; color: var(--repair); }
-  .status-replace  { background: #fdecea; color: var(--replace); }
-  .status-retired  { background: #f0f0f0; color: var(--retired); }
-  .status-lost     { background: #f3eaf8; color: var(--lost); }
-
-  .btn-status {
-    padding: 5px 10px;
-    background: none; border: 1.5px solid var(--border);
-    border-radius: 6px; cursor: pointer;
-    font-family: 'Barlow', sans-serif;
-    font-size: 12px; font-weight: 600; color: var(--muted);
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .btn-status:hover { border-color: var(--orange); color: var(--orange); }
-
-  /* Status change modal */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45); z-index: 1000;
-    align-items: center; justify-content: center;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: white; border-radius: 14px;
-    padding: 24px; width: 100%; max-width: 400px;
-    margin: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.2);
-  }
-  .modal-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px; font-weight: 800;
-    letter-spacing: 0.04em; text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  .modal-sub {
-    font-size: 13px; color: var(--muted); margin-bottom: 18px;
-  }
-  .status-options {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 8px; margin-bottom: 18px;
-  }
-  .status-option {
-    padding: 10px 12px; border-radius: 8px;
-    border: 2px solid var(--border); cursor: pointer;
-    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
-    text-align: center; transition: border-color 0.15s, background 0.15s;
-    background: white;
-  }
-  .status-option:hover { border-color: var(--orange); }
-  .status-option.selected { border-color: var(--orange); background: #fff3ee; }
-  .status-option.opt-in      { color: var(--success); }
-  .status-option.opt-repair  { color: var(--repair); }
-  .status-option.opt-replace { color: var(--replace); }
-  .status-option.opt-retired { color: var(--retired); }
-  .status-option.opt-lost    { color: var(--lost); }
-
-  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-  .btn-cancel {
-    padding: 10px 18px; background: none;
-    border: 1.5px solid var(--border); border-radius: 8px;
-    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600;
-    cursor: pointer; color: var(--muted);
-  }
-  .btn-cancel:hover { border-color: var(--ink); color: var(--ink); }
-  .btn-confirm {
-    padding: 10px 20px; background: var(--orange); color: white;
-    border: none; border-radius: 8px;
-    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: background 0.15s;
-  }
-  .btn-confirm:hover { background: var(--orange-dark); }
-  .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-secondary:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
 
   .empty-state {
-    text-align: center; padding: 32px;
-    color: var(--muted); font-size: 14px;
+    text-align: center; padding: 28px;
+    color: var(--text-muted); font-size: 14px;
   }
 
   .config-warning {
-    background: #fff8e1; border: 1.5px solid #f0c040;
-    border-radius: 10px; padding: 16px; margin-bottom: 16px;
+    background: var(--feedback-warn-bg);
+    border: 1.5px solid var(--feedback-warn-border);
+    border-radius: 9px; padding: 14px; margin-bottom: 16px;
     font-size: 13px; line-height: 1.6; display: none;
   }
   .config-warning.show { display: block; }
@@ -295,52 +220,161 @@
   .config-warning code { background: #f5f2ee; border-radius: 3px; padding: 1px 5px; font-size: 12px; word-break: break-all; }
 
   .toast {
-    position: fixed; top: 20px; right: 20px;
-    padding: 14px 20px; border-radius: 10px;
-    font-weight: 600; font-size: 14px; max-width: 360px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 9999;
-    opacity: 0; transform: translateY(-10px);
+    position: fixed; top: 18px; right: 18px;
+    padding: 12px 18px; border-radius: 9px;
+    font-weight: 600; font-size: 13px; max-width: 340px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 9999;
+    opacity: 0; transform: translateY(-8px);
     transition: opacity 0.2s, transform 0.2s; pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.success { background: #e8f5ee; color: var(--success); border: 1.5px solid #b2d9c3; }
-  .toast.error   { background: #fdecea; color: var(--error);   border: 1.5px solid #f5b7b1; }
-  .toast.warn    { background: #fef9e7; color: var(--warn);    border: 1.5px solid #f9e79f; }
+  .toast.success { background: var(--feedback-success-bg); color: var(--feedback-success-text); border: 1.5px solid var(--feedback-success-border); }
+  .toast.error   { background: var(--feedback-error-bg);   color: var(--feedback-error-text);   border: 1.5px solid var(--feedback-error-border); }
+  .toast.warn    { background: var(--feedback-warn-bg);    color: var(--feedback-warn-text);    border: 1.5px solid var(--feedback-warn-border); }
 
-  .count-pill {
-    display: inline-block; background: var(--orange);
-    color: white; border-radius: 20px;
-    padding: 1px 9px; font-size: 12px; font-weight: 700;
-    margin-left: 6px; vertical-align: middle;
+  /* Status badges */
+  .badge-id {
+    display: inline-block; background: #EFF6FF;
+    border-radius: 4px; padding: 1px 7px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.04em; color: var(--brand-primary);
+    border: 1px solid #BFDBFE;
   }
+  .status-badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .status-in      { background: var(--status-available-bg); color: var(--status-available-text); }
+  .status-out     { background: var(--status-out-bg);       color: var(--status-out-text); }
+  .status-repair  { background: var(--status-repair-bg);    color: var(--status-repair-text); }
+  .status-replace { background: var(--status-replace-bg);   color: var(--status-replace-text); }
+  .status-retired { background: var(--status-retired-bg);   color: var(--status-retired-text); }
+  .status-lost    { background: var(--status-lost-bg);      color: var(--status-lost-text); }
+
+  /* Results table */
+  .results-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .results-table th {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted); text-align: left;
+    padding: 7px 11px; border-bottom: 1.5px solid var(--border-default);
+  }
+  .results-table td { padding: 9px 11px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td { background: #F9FAFB; }
+
+  .lookup-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 14px; }
+  .lookup-row .field { flex: 1; margin-bottom: 0; }
 
   @media (max-width: 600px) {
-    .row3 { grid-template-columns: 1fr; }
-    .row2 { grid-template-columns: 1fr; }
-    .status-options { grid-template-columns: 1fr; }
+    header { flex-wrap: wrap; gap: 10px; }
+    .header-logo { height: 36px; }
+    .row2, .row3 { grid-template-columns: 1fr; }
+    nav button { padding: 10px 12px; font-size: 13px; }
+    .results-table { font-size: 12px; }
+    .results-table th, .results-table td { padding: 7px 8px; }
   }
+
+
+  .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .field-hint.error { color: var(--status-out-text); font-weight: 600; }
+  input.error-field { border-color: var(--status-out-text); }
+
+  .count-pill {
+    display: inline-block; background: var(--brand-primary); color: white;
+    border-radius: 20px; padding: 1px 8px;
+    font-size: 12px; font-weight: 700; margin-left: 6px; vertical-align: middle;
+  }
+
+  .toolbar { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 13px; flex-wrap: wrap; }
+  .toolbar .field { margin-bottom: 0; flex: 1; min-width: 130px; }
+
+  .results-table th { cursor: pointer; user-select: none; }
+  .results-table th:hover { color: var(--brand-primary); }
+  .results-table th.sorted { color: var(--brand-primary); }
+
+  .btn-status {
+    padding: 4px 9px; background: none;
+    border: 1.5px solid var(--border-default); border-radius: 5px;
+    font-family: 'Barlow', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer;
+    transition: border-color 0.15s, color 0.15s; white-space: nowrap;
+  }
+  .btn-status:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+  .btn-history {
+    padding: 4px 9px; background: none;
+    border: 1.5px solid var(--border-default); border-radius: 5px;
+    font-family: 'Barlow', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer;
+    transition: border-color 0.15s, color 0.15s; white-space: nowrap;
+  }
+  .btn-history:hover { border-color: var(--brand-accent); color: var(--brand-accent); }
+
+  .notes-cell { max-width: 200px; font-size: 12px; color: var(--text-muted); }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 12px; padding: 22px; width: 100%; max-width: 420px; margin: 18px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+  .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .status-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .status-option {
+    padding: 9px 11px; border-radius: 7px; border: 2px solid var(--border-default);
+    cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    text-align: center; transition: border-color 0.15s, background 0.15s; background: white;
+  }
+  .status-option:hover { border-color: var(--brand-primary); }
+  .status-option.selected { border-color: var(--brand-primary); background: #EFF6FF; }
+  .status-option.opt-in      { color: var(--status-available-text); }
+  .status-option.opt-repair  { color: var(--status-repair-text); }
+  .status-option.opt-replace { color: var(--status-replace-text); }
+  .status-option.opt-retired { color: var(--status-retired-text); }
+  .status-option.opt-lost    { color: var(--status-lost-text); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-cancel { padding: 9px 16px; background: none; border: 1.5px solid var(--border-default); border-radius: 7px; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+  .btn-cancel:hover { border-color: var(--text-primary); color: var(--text-primary); }
+  .btn-confirm { padding: 9px 18px; background: var(--brand-primary); color: white; border: none; border-radius: 7px; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-confirm:hover { background: var(--brand-primary-dark); }
+  .btn-confirm:disabled { background: #9CA3AF; cursor: not-allowed; }
+
+  /* History panel */
+  .history-panel { display:none; }
+  .history-panel.active { display:block; }
+  .history-search-row { display:flex; gap:10px; align-items:flex-end; margin-bottom:13px; }
+  .history-search-row .field { flex:1; margin-bottom:0; }
+  .event-tag { display:inline-block; border-radius:4px; padding:1px 7px; font-size:11px; font-weight:600; }
+  .event-checkout   { background:#EFF6FF; color:var(--brand-primary); }
+  .event-checkin    { background:var(--status-available-bg); color:var(--status-available-text); }
+  .event-auto-checkin { background:var(--status-repair-bg); color:var(--status-repair-text); }
+
+  @media (max-width:600px) { .status-options { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Tool Admin</h1>
-  <span class="sub">Inventory Manager</span>
-  <a class="back-link" href="tool-tracker.html">← Back to Tool Tracker</a>
+  <img src="logo.png" alt="Company Logo" class="header-logo">
+  <div class="header-divider"></div>
+  <div>
+    <div class="header-title">Tool Admin</div>
+    <span class="header-sub">Inventory Manager</span>
+  </div>
+  <a class="header-link" href="tool-tracker.html">← Tracker</a>
 </header>
 
 <nav>
-  <button class="active" onclick="showPage('add')">Add Tools</button>
-  <button onclick="showPage('list', true)">Tool List</button>
+  <button class="active" onclick="showPage('add', this)">Add Tools</button>
+  <button onclick="showPage('list', this)">Tool List</button>
+  <button onclick="showPage('history', this)">History</button>
 </nav>
 
 <div id="toast" class="toast"></div>
 
-<!-- Status Change Modal -->
+<!-- Status Modal -->
 <div class="modal-overlay" id="statusModal">
   <div class="modal">
     <div class="modal-title">Change Status</div>
-    <div class="modal-sub" id="modal-sub">TOOL-001 — Tool Name</div>
+    <div class="modal-sub" id="modal-sub"></div>
     <div class="status-options">
       <div class="status-option opt-in"      onclick="selectStatus('in')"      id="opt-in">✓ Available</div>
       <div class="status-option opt-repair"  onclick="selectStatus('repair')"  id="opt-repair">🔧 Needs Repair</div>
@@ -356,67 +390,58 @@
 </div>
 
 <div class="container">
-
   <div class="config-warning" id="configWarning">
     <strong>⚠️ Setup required</strong>
-    Replace <code>YOUR_APPS_SCRIPT_URL</code> in this file with your deployed Apps Script URL.
+    Replace <code>YOUR_APPS_SCRIPT_URL</code> near the bottom of this file with your deployed Apps Script URL.
   </div>
 
-  <!-- ═══════════════════ ADD TOOLS PAGE ═══════════════════ -->
+  <!-- ADD TOOLS -->
   <div id="page-add" class="page active">
     <div class="page-title">Add New Tool</div>
-
     <div class="card">
       <div class="card-title">Tool Details</div>
       <div class="row3">
         <div class="field">
-          <label>Tool ID</label>
-          <input type="text" id="add-id" placeholder="e.g. TOOL-043" oninput="clearIdError()">
-          <div class="field-hint" id="id-hint">Must be unique. Check the Tool List tab to see existing IDs.</div>
+          <label>Tool ID <span style="font-size:10px;color:var(--text-muted)">(auto-generated)</span></label>
+          <input type="text" id="add-id" placeholder="e.g. 000043" oninput="clearIdError()">
+          <div class="field-hint" id="id-hint">Auto-filled from next available ID. You may override.</div>
         </div>
         <div class="field">
           <label>Category</label>
-          <select id="add-category">
-            <option value="">Loading categories…</option>
-          </select>
+          <select id="add-category"><option value="">Loading…</option></select>
         </div>
         <div class="field">
           <label>Tool Name</label>
           <input type="text" id="add-name" placeholder="e.g. DeWalt 20V Drill">
         </div>
       </div>
-      <button class="btn-primary" id="add-submit" onclick="submitAddTool()">Add Tool</button>
+      <button class="btn-primary" id="add-submit" onclick="submitAddTool()">Add to Queue</button>
     </div>
 
-    <div class="card" id="add-queue-card" style="display:none">
+    <div class="card" id="queue-card" style="display:none">
       <div class="card-title">Tools to Add <span class="count-pill" id="queue-count">0</span></div>
       <table class="results-table" id="queue-table">
-        <thead>
-          <tr><th>Tool ID</th><th>Name</th><th>Category</th><th></th></tr>
-        </thead>
+        <thead><tr><th>Tool ID</th><th>Name</th><th>Category</th><th></th></tr></thead>
         <tbody id="queue-body"></tbody>
       </table>
-      <div style="margin-top:14px">
+      <div style="margin-top:13px">
         <button class="btn-primary" id="commit-btn" onclick="commitQueue()">Save All to Spreadsheet</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════ TOOL LIST PAGE ═══════════════════ -->
+  <!-- TOOL LIST -->
   <div id="page-list" class="page">
     <div class="page-title">Tool List</div>
-
     <div class="card">
       <div class="toolbar">
         <div class="field">
-          <label>Filter by Category</label>
-          <select id="list-filter-cat" onchange="renderList()">
-            <option value="">All Categories</option>
-          </select>
+          <label>Category</label>
+          <select id="list-cat" onchange="renderList()"><option value="">All</option></select>
         </div>
         <div class="field">
-          <label>Filter by Status</label>
-          <select id="list-filter-status" onchange="renderList()">
+          <label>Status</label>
+          <select id="list-status" onchange="renderList()">
             <option value="">All Statuses</option>
             <option value="in">Available</option>
             <option value="out">Checked Out</option>
@@ -432,19 +457,31 @@
         </div>
         <button class="btn-secondary" onclick="loadList()">↻ Refresh</button>
       </div>
-
-      <div id="list-container">
-        <div class="empty-state">Loading tools…</div>
-      </div>
+      <div id="list-container"><div class="empty-state">Loading…</div></div>
     </div>
   </div>
 
+  <!-- HISTORY -->
+  <div id="page-history" class="page">
+    <div class="page-title">Tool History</div>
+    <div class="card">
+      <div class="history-search-row">
+        <div class="field">
+          <label>Tool ID or Name</label>
+          <input type="text" id="hist-query" placeholder="e.g. 000042 or DeWalt…" onkeydown="if(event.key==='Enter') loadHistory()">
+        </div>
+        <button class="btn-secondary" onclick="loadHistory()">Search</button>
+      </div>
+      <div id="hist-results"><div class="empty-state">Enter a tool ID or name to load its full audit history.</div></div>
+    </div>
+  </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPLf-QEcq7nQLO4Bfcd4DiL0C8DvrEGJ1HqEAVQ-skXglzc0BIxUg8X_GWmnTYNoy0TA/exec';
 // ══════════════════════════════════════════════════════
+
 
 const STATUS_LABELS = {
   in:      'Available',
@@ -454,166 +491,155 @@ const STATUS_LABELS = {
   retired: 'Retired / Disposed',
   lost:    'Lost'
 };
-
-let categories = [];
-let allTools   = [];
-let queue      = [];       // tools staged to add
-let sortCol    = 'id';
-let sortAsc    = true;
-let modalToolId   = null;
-let selectedStatus = null;
-
-// ── Init ──────────────────────────────────────────────
-window.onload = async () => {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL') {
-    document.getElementById('configWarning').classList.add('show');
-  }
-  await loadCategories();
-};
-
-// ── Navigation ────────────────────────────────────────
-function showPage(name, load = false) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if (name === 'list') loadList();
+function statusBadge(status) {
+  const label = STATUS_LABELS[status] || status;
+  return `<span class="status-badge status-${status}">${label}</span>`;
 }
 
-// ── API ───────────────────────────────────────────────
+
+let _toastTimer;
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show ' + type;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+       + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+function getDuration(isoStart) { return formatDuration(Date.now() - new Date(isoStart).getTime()); }
+function getDurationBetween(a, b) { return formatDuration(new Date(b).getTime() - new Date(a).getTime()); }
+function formatDuration(ms) {
+  const mins = Math.floor(ms / 60000), hrs = Math.floor(mins / 60), days = Math.floor(hrs / 24);
+  let text;
+  if (days > 0) text = days + 'd ' + (hrs % 24) + 'h';
+  else if (hrs > 0) text = hrs + 'h ' + (mins % 60) + 'm';
+  else text = mins + 'm';
+  return { text, long: days >= 7 };
+}
+
+
 async function api(params) {
   const url = APPS_SCRIPT_URL + '?' + new URLSearchParams(params);
   const r = await fetch(url, { redirect: 'follow' });
   const text = await r.text();
   try { return JSON.parse(text); }
-  catch { throw new Error('Bad response: ' + text.slice(0, 100)); }
+  catch { throw new Error('Bad response: ' + text.slice(0, 120)); }
 }
 
-// ── Load categories ───────────────────────────────────
+
+let categories = [], allTools = [], queue = [];
+let sortCol = 'id', sortAsc = true;
+let modalToolId = null, selectedStatus = null;
+
+window.onload = async () => {
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL') document.getElementById('configWarning').classList.add('show');
+  await loadCategories();
+};
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'list') loadList();
+}
+
 async function loadCategories() {
   try {
-    const data = await api({ action: 'getCategoriesOnly' });
-    categories = data.categories || [];
-    populateCatSelect('add-category');
-    populateCatSelect('list-filter-cat', true);
-  } catch(e) {
-    categories = [];
-    showToast('Could not load categories: ' + e.message, 'error');
-  }
+    const d = await api({ action: 'getCategoriesOnly' });
+    categories = d.categories || [];
+    const addSel = document.getElementById('add-category');
+    addSel.innerHTML = '<option value="">— Select category —</option>';
+    categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; addSel.appendChild(o); });
+    const listSel = document.getElementById('list-cat');
+    listSel.innerHTML = '<option value="">All</option>';
+    categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; listSel.appendChild(o); });
+    // Auto-generate next ID
+    await suggestNextId();
+  } catch(e) { showToast('Could not load categories: ' + e.message, 'error'); }
 }
 
-function populateCatSelect(id, withAll = false) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  sel.innerHTML = withAll ? '<option value="">All Categories</option>' : '<option value="">— Select category —</option>';
-  categories.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    sel.appendChild(opt);
-  });
+async function suggestNextId() {
+  try {
+    const d = await api({ action: 'getAllTools' });
+    const tools = d.tools || [];
+    // Extract numeric IDs, find max
+    const nums = tools.map(t => parseInt(t.id.replace(/\D/g, ''), 10)).filter(n => !isNaN(n));
+    const next = nums.length ? Math.max(...nums) + 1 : 1;
+    const nextId = String(next).padStart(6, '0');
+    const field = document.getElementById('add-id');
+    if (!field.value) field.value = nextId;
+  } catch(e) {}
 }
 
 // ── Add Tool ──────────────────────────────────────────
 async function submitAddTool() {
-  const toolId   = document.getElementById('add-id').value.trim().toUpperCase();
+  const toolId   = document.getElementById('add-id').value.trim();
   const category = document.getElementById('add-category').value;
   const name     = document.getElementById('add-name').value.trim();
-
-  if (!toolId || !category || !name) {
-    showToast('Please fill in all three fields.', 'error'); return;
-  }
-
-  // Check for duplicate — first in queue, then in sheet
-  if (queue.some(q => q.id === toolId)) {
-    markIdError('Already in your queue above.'); return;
-  }
+  if (!toolId || !category || !name) { showToast('Please fill in all three fields.', 'error'); return; }
+  if (queue.some(q => q.id === toolId)) { markIdError('Already in your queue above.'); return; }
 
   const btn = document.getElementById('add-submit');
   btn.disabled = true; btn.textContent = 'Checking…';
-
   try {
     const check = await api({ action: 'checkToolId', toolId });
-    if (check.exists) {
-      markIdError(`ID already exists: "${check.name}" (${check.category})`);
-      btn.disabled = false; btn.textContent = 'Add Tool'; return;
-    }
-  } catch(e) {
-    showToast('Could not verify ID: ' + e.message, 'error');
-    btn.disabled = false; btn.textContent = 'Add Tool'; return;
-  }
+    if (check.exists) { markIdError('ID already exists: "' + check.name + '" (' + check.category + ')'); btn.disabled = false; btn.textContent = 'Add to Queue'; return; }
+  } catch(e) { showToast('Could not verify ID: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Add to Queue'; return; }
 
-  // Add to queue
   queue.push({ id: toolId, name, category });
   renderQueue();
-
-  // Clear fields
-  document.getElementById('add-id').value = '';
   document.getElementById('add-name').value = '';
-  document.getElementById('add-id').focus();
-
-  btn.disabled = false; btn.textContent = 'Add Tool';
+  // Suggest next ID
+  const nums = queue.map(q => parseInt(q.id.replace(/\D/g, ''), 10)).concat(
+    allTools.map(t => parseInt(t.id.replace(/\D/g, ''), 10))
+  ).filter(n => !isNaN(n));
+  const next = nums.length ? Math.max(...nums) + 1 : 1;
+  document.getElementById('add-id').value = String(next).padStart(6, '0');
+  clearIdError();
+  document.getElementById('add-name').focus();
+  btn.disabled = false; btn.textContent = 'Add to Queue';
 }
 
 function markIdError(msg) {
   document.getElementById('add-id').classList.add('error-field');
-  const hint = document.getElementById('id-hint');
-  hint.textContent = msg;
-  hint.classList.add('error');
+  const h = document.getElementById('id-hint'); h.textContent = msg; h.classList.add('error');
 }
-
 function clearIdError() {
   document.getElementById('add-id').classList.remove('error-field');
-  const hint = document.getElementById('id-hint');
-  hint.textContent = 'Must be unique. Check the Tool List tab to see existing IDs.';
-  hint.classList.remove('error');
+  const h = document.getElementById('id-hint'); h.textContent = 'Auto-filled from next available ID. You may override.'; h.classList.remove('error');
 }
 
 function renderQueue() {
-  const card = document.getElementById('add-queue-card');
-  const tbody = document.getElementById('queue-body');
+  const card = document.getElementById('queue-card');
   document.getElementById('queue-count').textContent = queue.length;
-
-  if (queue.length === 0) { card.style.display = 'none'; return; }
+  if (!queue.length) { card.style.display = 'none'; return; }
   card.style.display = 'block';
-
-  tbody.innerHTML = queue.map((t, i) => `
+  document.getElementById('queue-body').innerHTML = queue.map((t, i) => `
     <tr>
       <td><span class="badge-id">${t.id}</span></td>
-      <td>${t.name}</td>
-      <td>${t.category}</td>
-      <td><button class="btn-status" onclick="removeFromQueue(${i})">✕ Remove</button></td>
-    </tr>
-  `).join('');
-}
-
-function removeFromQueue(i) {
-  queue.splice(i, 1);
-  renderQueue();
+      <td>${t.name}</td><td>${t.category}</td>
+      <td><button class="btn-status" onclick="queue.splice(${i},1);renderQueue()">✕</button></td>
+    </tr>`).join('');
 }
 
 async function commitQueue() {
-  if (queue.length === 0) return;
+  if (!queue.length) return;
   const btn = document.getElementById('commit-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
-
   try {
-    const result = await api({
-      action: 'addTools',
-      tools: JSON.stringify(queue)
-    });
-
-    if (result.success) {
-      showToast(`✓ ${queue.length} tool(s) added to spreadsheet.`, 'success');
-      queue = [];
-      renderQueue();
-      await loadCategories(); // refresh in case new category was added
-    } else {
-      showToast('Error: ' + (result.error || 'Unknown'), 'error');
-    }
-  } catch(e) {
-    showToast('Failed: ' + e.message, 'error');
-  }
-
+    const r = await api({ action: 'addTools', tools: JSON.stringify(queue) });
+    if (r.success) {
+      showToast('✓ ' + queue.length + ' tool(s) added.', 'success');
+      queue = []; renderQueue(); await loadCategories();
+    } else showToast('Error: ' + (r.error || 'Unknown'), 'error');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
   btn.disabled = false; btn.textContent = 'Save All to Spreadsheet';
 }
 
@@ -621,158 +647,143 @@ async function commitQueue() {
 async function loadList() {
   document.getElementById('list-container').innerHTML = '<div class="empty-state">Loading…</div>';
   try {
-    const data = await api({ action: 'getAllTools' });
-    allTools = data.tools || [];
-    populateCatSelect('list-filter-cat', true);
+    const d = await api({ action: 'getAllTools' });
+    allTools = d.tools || [];
     renderList();
   } catch(e) {
-    document.getElementById('list-container').innerHTML =
-      `<div class="empty-state" style="color:var(--error)">Error: ${e.message}</div>`;
+    document.getElementById('list-container').innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>';
   }
 }
 
 function renderList() {
-  const catFilter    = document.getElementById('list-filter-cat').value;
-  const statusFilter = document.getElementById('list-filter-status').value;
-  const search       = document.getElementById('list-search').value.toLowerCase().trim();
+  const catF    = document.getElementById('list-cat').value;
+  const statusF = document.getElementById('list-status').value;
+  const search  = document.getElementById('list-search').value.toLowerCase().trim();
 
   let filtered = allTools.filter(t => {
-    if (catFilter    && t.category !== catFilter) return false;
-    if (statusFilter && t.status   !== statusFilter) return false;
-    if (search && !t.id.toLowerCase().includes(search) && !t.name.toLowerCase().includes(search)) return false;
+    if (catF    && t.category !== catF) return false;
+    if (statusF && t.status   !== statusF) return false;
+    if (search  && !t.id.toLowerCase().includes(search) && !t.name.toLowerCase().includes(search)) return false;
     return true;
   });
 
-  // Sort
   filtered.sort((a, b) => {
-    let va = a[sortCol] || '', vb = b[sortCol] || '';
-    if (typeof va === 'string') va = va.toLowerCase();
-    if (typeof vb === 'string') vb = vb.toLowerCase();
-    if (va < vb) return sortAsc ? -1 : 1;
-    if (va > vb) return sortAsc ?  1 : -1;
-    return 0;
+    let va = (a[sortCol] || '').toLowerCase(), vb = (b[sortCol] || '').toLowerCase();
+    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
   });
 
   const container = document.getElementById('list-container');
+  if (!filtered.length) { container.innerHTML = '<div class="empty-state">No tools match.</div>'; return; }
 
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state">No tools match the current filters.</div>';
-    return;
-  }
-
-  const arrow = col => {
-    const active = sortCol === col;
-    return `<span class="sort-arrow">${active ? (sortAsc ? '▲' : '▼') : '⇅'}</span>`;
-  };
+  const arrow = col => `<span style="opacity:${sortCol===col?1:0.3};color:var(--brand-primary)">${sortCol===col?(sortAsc?'▲':'▼'):'⇅'}</span>`;
 
   container.innerHTML = `
     <table class="results-table">
-      <thead>
-        <tr>
-          <th class="${sortCol==='id'?'sorted':''}"       onclick="setSort('id')">Tool ID ${arrow('id')}</th>
-          <th class="${sortCol==='name'?'sorted':''}"     onclick="setSort('name')">Name ${arrow('name')}</th>
-          <th class="${sortCol==='category'?'sorted':''}" onclick="setSort('category')">Category ${arrow('category')}</th>
-          <th class="${sortCol==='status'?'sorted':''}"   onclick="setSort('status')">Status ${arrow('status')}</th>
-          <th class="${sortCol==='checkedOutBy'?'sorted':''}" onclick="setSort('checkedOutBy')">Checked Out To ${arrow('checkedOutBy')}</th>
-          <th></th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th class="${sortCol==='id'?'sorted':''}"       onclick="setSort('id')">Tool ID ${arrow('id')}</th>
+        <th class="${sortCol==='name'?'sorted':''}"     onclick="setSort('name')">Name ${arrow('name')}</th>
+        <th class="${sortCol==='category'?'sorted':''}" onclick="setSort('category')">Category ${arrow('category')}</th>
+        <th class="${sortCol==='status'?'sorted':''}"   onclick="setSort('status')">Status ${arrow('status')}</th>
+        <th>Checked Out To</th>
+        <th>Last Condition</th>
+        <th>Issue Notes</th>
+        <th></th>
+      </tr></thead>
       <tbody>
-        ${filtered.map(t => `
-          <tr>
-            <td><span class="badge-id">${t.id}</span></td>
-            <td>${t.name}</td>
-            <td>${t.category}</td>
-            <td>${statusBadge(t.status)}</td>
-            <td>${t.checkedOutBy || '—'}</td>
-            <td><button class="btn-status" onclick="openModal('${t.id}', '${escapeAttr(t.name)}', '${t.status}')">Change Status</button></td>
-          </tr>
-        `).join('')}
+        ${filtered.map(t => `<tr>
+          <td><span class="badge-id">${t.id}</span></td>
+          <td>${t.name}</td>
+          <td>${t.category}</td>
+          <td>${statusBadge(t.status)}</td>
+          <td>${t.checkedOutBy || '—'}</td>
+          <td>${t.condition || '—'}</td>
+          <td class="notes-cell" title="${t.notes}">${t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40)+'…' : t.notes) : '—'}</td>
+          <td style="white-space:nowrap">
+            <button class="btn-status" onclick="openModal('${t.id}', '${t.name.replace(/'/g,\"\\'\")}'  , '${t.status}')">Status</button>
+            &nbsp;
+            <button class="btn-history" onclick="jumpToHistory('${t.id}')">History</button>
+          </td>
+        </tr>`).join('')}
       </tbody>
     </table>
-    <div style="font-size:12px;color:var(--muted);margin-top:10px;text-align:right">${filtered.length} tool${filtered.length!==1?'s':''} shown</div>
-  `;
+    <div style="font-size:12px;color:var(--text-muted);margin-top:9px;text-align:right">${filtered.length} tool${filtered.length!==1?'s':''}</div>`;
 }
 
 function setSort(col) {
-  if (sortCol === col) sortAsc = !sortAsc;
-  else { sortCol = col; sortAsc = true; }
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
   renderList();
 }
 
-function statusBadge(status) {
-  const map = {
-    in:      'status-in',
-    out:     'status-out',
-    repair:  'status-repair',
-    replace: 'status-replace',
-    retired: 'status-retired',
-    lost:    'status-lost'
-  };
-  const cls = map[status] || 'status-in';
-  return `<span class="status-badge ${cls}">${STATUS_LABELS[status] || status}</span>`;
-}
-
-function escapeAttr(s) { return s.replace(/'/g, "\\'"); }
-
 // ── Status Modal ──────────────────────────────────────
 function openModal(toolId, toolName, currentStatus) {
-  modalToolId = toolId;
-  selectedStatus = currentStatus;
-  document.getElementById('modal-sub').textContent = `${toolId} — ${toolName}`;
-
-  // Highlight current
+  modalToolId = toolId; selectedStatus = currentStatus;
+  document.getElementById('modal-sub').textContent = toolId + ' — ' + toolName;
   document.querySelectorAll('.status-option').forEach(el => el.classList.remove('selected'));
   const cur = document.getElementById('opt-' + currentStatus);
   if (cur) cur.classList.add('selected');
-
   document.getElementById('statusModal').classList.add('open');
 }
-
-function closeModal() {
-  document.getElementById('statusModal').classList.remove('open');
-  modalToolId = null; selectedStatus = null;
-}
-
-function selectStatus(status) {
-  selectedStatus = status;
+function closeModal() { document.getElementById('statusModal').classList.remove('open'); modalToolId = null; selectedStatus = null; }
+function selectStatus(s) {
+  selectedStatus = s;
   document.querySelectorAll('.status-option').forEach(el => el.classList.remove('selected'));
-  document.getElementById('opt-' + status).classList.add('selected');
+  document.getElementById('opt-' + s).classList.add('selected');
 }
-
 async function confirmStatusChange() {
   if (!modalToolId || !selectedStatus) return;
   const btn = document.getElementById('modal-confirm');
   btn.disabled = true; btn.textContent = 'Saving…';
-
   try {
-    const result = await api({
-      action: 'setToolStatus',
-      toolId: modalToolId,
-      status: selectedStatus
-    });
-
-    if (result.success) {
-      showToast(`✓ ${modalToolId} → ${STATUS_LABELS[selectedStatus]}`, 'success');
-      closeModal();
-      await loadList();
-    } else {
-      showToast('Error: ' + (result.error || 'Unknown'), 'error');
-    }
-  } catch(e) {
-    showToast('Failed: ' + e.message, 'error');
-  }
-
+    const r = await api({ action: 'setToolStatus', toolId: modalToolId, status: selectedStatus });
+    if (r.success) {
+      showToast('✓ ' + modalToolId + ' → ' + STATUS_LABELS[selectedStatus], 'success');
+      closeModal(); await loadList();
+    } else showToast('Error: ' + (r.error || 'Unknown'), 'error');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
   btn.disabled = false; btn.textContent = 'Save';
 }
 
-// ── Toast ─────────────────────────────────────────────
-let toastTimer;
-function showToast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = 'toast show ' + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
+// ── History ───────────────────────────────────────────
+function jumpToHistory(toolId) {
+  // Switch to history tab and pre-fill query
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-history').classList.add('active');
+  document.querySelectorAll('nav button')[2].classList.add('active');
+  document.getElementById('hist-query').value = toolId;
+  loadHistory();
+}
+
+async function loadHistory() {
+  const query = document.getElementById('hist-query').value.trim();
+  const container = document.getElementById('hist-results');
+  if (!query) { showToast('Enter a tool ID or name.', 'warn'); return; }
+  container.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const d = await api({ action: 'fullHistory', query });
+    const records = d.records || [];
+    if (!records.length) { container.innerHTML = '<div class="empty-state">No history found for "' + query + '".</div>'; return; }
+    container.innerHTML = `
+      <table class="results-table">
+        <thead><tr>
+          <th>Tool ID</th><th>Name</th><th>Event</th><th>Employee</th>
+          <th>Checked Out</th><th>Checked In</th><th>Condition</th><th>Notes</th>
+        </tr></thead>
+        <tbody>
+          ${records.map(r => `<tr>
+            <td><span class="badge-id">${r.toolId}</span></td>
+            <td>${r.toolName}</td>
+            <td><span class="event-tag event-${r.eventType.replace('-','_')}">${r.eventType}</span></td>
+            <td>${r.employee}</td>
+            <td>${formatDate(r.checkedOutAt)}</td>
+            <td>${r.checkedInAt ? formatDate(r.checkedInAt) : '—'}</td>
+            <td>${r.condition || '—'}</td>
+            <td class="notes-cell" title="${r.conditionNotes}">${r.conditionNotes ? (r.conditionNotes.length > 40 ? r.conditionNotes.slice(0,40)+'…' : r.conditionNotes) : '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:9px;text-align:right">${records.length} event${records.length!==1?'s':''}</div>`;
+  } catch(e) { container.innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>'; }
 }
 </script>
 </body>

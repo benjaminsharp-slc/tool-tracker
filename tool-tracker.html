@@ -3,1022 +3,800 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tool Tracker</title>
+<title>Tool Tracker — Cowdin C&D</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+
   :root {
-    --orange: #D9541E;
-    --orange-dark: #b8441a;
-    --ink: #1a1a1a;
-    --bg: #f4f1ed;
-    --card: #ffffff;
-    --border: #ddd8d0;
-    --muted: #888;
-    --success: #2d7a4f;
-    --warn: #b8860b;
-    --error: #c0392b;
-    --header-bg: #1a1a1a;
+    /* Brand colors */
+    --brand-primary: #1B3A6B;       /* deep navy - main interactive color */
+    --brand-primary-dark: #142d55;  /* darker navy - hover states */
+    --brand-accent: #2E6DA4;        /* medium blue - secondary actions */
+
+    /* UI surface colors */
+    --surface-page: #F0F2F5;        /* page background */
+    --surface-card: #FFFFFF;        /* card/panel background */
+    --surface-header: #1B3A6B;      /* top header bar */
+    --surface-nav: #162F58;         /* navigation bar */
+
+    /* Text colors */
+    --text-primary: #1a1a1a;        /* main body text */
+    --text-muted: #6B7280;          /* labels, secondary info */
+
+    /* Border */
+    --border-default: #D1D5DB;      /* standard borders */
+
+    /* Semantic status colors */
+    --status-available-bg: #E8F5EE;
+    --status-available-text: #2d7a4f;
+    --status-available-border: #b2d9c3;
+
+    --status-out-bg: #FEF2F2;
+    --status-out-text: #B91C1C;
+    --status-out-border: #FECACA;
+
+    --status-repair-bg: #FFFBEB;
+    --status-repair-text: #92400E;
+    --status-repair-border: #FDE68A;
+
+    --status-replace-bg: #FFF7ED;
+    --status-replace-text: #C2410C;
+    --status-replace-border: #FED7AA;
+
+    --status-retired-bg: #F3F4F6;
+    --status-retired-text: #4B5563;
+    --status-retired-border: #D1D5DB;
+
+    --status-lost-bg: #F5F3FF;
+    --status-lost-text: #6D28D9;
+    --status-lost-border: #DDD6FE;
+
+    /* Feedback colors */
+    --feedback-success-bg: #E8F5EE;
+    --feedback-success-text: #2d7a4f;
+    --feedback-success-border: #b2d9c3;
+
+    --feedback-error-bg: #FEF2F2;
+    --feedback-error-text: #B91C1C;
+    --feedback-error-border: #FECACA;
+
+    --feedback-warn-bg: #FFFBEB;
+    --feedback-warn-text: #92400E;
+    --feedback-warn-border: #FDE68A;
   }
+
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Barlow', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-  }
+  body { font-family: 'Barlow', sans-serif; background: var(--surface-page); color: var(--text-primary); min-height: 100vh; }
 
   header {
-    background: var(--header-bg);
+    background: var(--surface-header);
     color: white;
-    padding: 18px 24px;
+    padding: 12px 20px;
     display: flex;
-    align-items: baseline;
-    gap: 14px;
+    align-items: center;
+    gap: 16px;
   }
-  header h1 {
+  .header-logo {
+    height: 48px;
+    width: auto;
+    flex-shrink: 0;
+    filter: invert(1); /* inverts dark logo to white for dark header — remove if logo is already light */
+  }
+  .header-divider {
+    width: 1px; height: 36px;
+    background: rgba(255,255,255,0.25);
+    flex-shrink: 0;
+  }
+  .header-title {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: white;
+    font-size: 20px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
+    flex: 1;
   }
-  header .sub {
+  .header-sub {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--orange);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    display: block;
+    margin-top: 2px;
   }
+  .header-link {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px; font-weight: 600;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .header-link:hover { color: white; }
 
   nav {
-    background: #242424;
+    background: var(--surface-nav);
     display: flex;
-    gap: 0;
-    padding: 0 24px;
-    border-bottom: 2px solid var(--orange);
+    padding: 0 20px;
+    border-bottom: 2px solid var(--brand-accent);
+    overflow-x: auto;
   }
   nav button {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #aaa;
-    background: none;
-    border: none;
-    padding: 12px 20px;
-    cursor: pointer;
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    background: none; border: none;
+    padding: 11px 18px; cursor: pointer;
     border-bottom: 3px solid transparent;
     margin-bottom: -2px;
     transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
   }
-  nav button:hover { color: white; }
-  nav button.active { color: var(--orange); border-bottom-color: var(--orange); }
+  nav button:hover { color: rgba(255,255,255,0.85); }
+  nav button.active { color: white; border-bottom-color: var(--brand-accent); }
 
-  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
-
+  .container { max-width: 960px; margin: 0 auto; padding: 22px 18px; }
   .page { display: none; }
   .page.active { display: block; }
 
-  .card {
-    background: var(--card);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 21px; font-weight: 800;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    margin-bottom: 18px; color: var(--text-primary);
   }
 
+  .card {
+    background: var(--surface-card);
+    border: 1.5px solid var(--border-default);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
   .card-title {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px; padding-bottom: 9px;
+    border-bottom: 1px solid var(--border-default);
   }
 
   label {
     display: block;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 5px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 4px;
   }
-
-  select, input[type="text"], input[type="date"] {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 15px;
-    color: var(--ink);
-    background: white;
-    appearance: none;
+  select, input[type="text"], input[type="date"], textarea {
+    width: 100%; padding: 9px 11px;
+    border: 1.5px solid var(--border-default); border-radius: 7px;
+    font-family: 'Barlow', sans-serif; font-size: 14px;
+    color: var(--text-primary); background: white; appearance: none;
     transition: border-color 0.15s;
   }
-  select:focus, input:focus {
-    outline: none;
-    border-color: var(--orange);
-  }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--brand-primary); }
 
-  .field { margin-bottom: 14px; }
-
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-
-  /* Tool line items */
-  .tool-lines { margin-bottom: 14px; }
-
-  .tool-line {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 10px;
-    align-items: end;
-    margin-bottom: 10px;
-    padding: 12px;
-    background: #faf9f7;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-  }
-
-  .btn-remove {
-    width: 36px; height: 36px;
-    border: 1.5px solid var(--border);
-    background: white;
-    border-radius: 7px;
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--muted);
-    display: flex; align-items: center; justify-content: center;
-    transition: border-color 0.15s, color 0.15s;
-    flex-shrink: 0;
-    align-self: flex-end;
-    margin-bottom: 0;
-  }
-  .btn-remove:hover { border-color: var(--error); color: var(--error); }
-
-  .btn-add {
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 16px;
-    border: 1.5px dashed var(--border);
-    background: none;
-    border-radius: 8px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 14px;
-  }
-  .btn-add:hover { border-color: var(--orange); color: var(--orange); }
+  .field { margin-bottom: 13px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 13px; }
 
   .btn-primary {
-    display: block; width: 100%; padding: 16px;
-    background: var(--orange); color: white; border: none;
-    border-radius: 10px;
+    display: block; width: 100%; padding: 14px;
+    background: var(--brand-primary); color: white; border: none;
+    border-radius: 9px;
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px; font-weight: 700;
+    font-size: 18px; font-weight: 700;
     letter-spacing: 0.06em; text-transform: uppercase;
-    cursor: pointer; transition: background 0.15s;
+    cursor: pointer; transition: background 0.15s; margin-top: 4px;
   }
-  .btn-primary:hover { background: var(--orange-dark); }
-  .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-primary:hover { background: var(--brand-primary-dark); }
+  .btn-primary:disabled { background: #9CA3AF; cursor: not-allowed; }
 
   .btn-secondary {
-    padding: 10px 20px;
-    background: white; border: 1.5px solid var(--border);
-    border-radius: 8px;
+    padding: 8px 16px;
+    background: white; border: 1.5px solid var(--border-default);
+    border-radius: 7px;
     font-family: 'Barlow', sans-serif;
-    font-size: 14px; font-weight: 600;
-    cursor: pointer; color: var(--ink);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; color: var(--text-primary);
     transition: border-color 0.15s;
   }
-  .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+  .btn-secondary:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
 
-  /* Status / toast */
-  .toast {
-    position: fixed; top: 20px; right: 20px;
-    padding: 14px 20px;
-    border-radius: 10px;
-    font-weight: 600; font-size: 14px;
-    max-width: 360px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    z-index: 9999;
-    opacity: 0; transform: translateY(-10px);
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
+  .empty-state {
+    text-align: center; padding: 28px;
+    color: var(--text-muted); font-size: 14px;
   }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.success { background: #e8f5ee; color: var(--success); border: 1.5px solid #b2d9c3; }
-  .toast.error   { background: #fdecea; color: var(--error);   border: 1.5px solid #f5b7b1; }
-  .toast.warn    { background: #fef9e7; color: var(--warn);    border: 1.5px solid #f9e79f; }
 
-  /* Config warning */
   .config-warning {
-    background: #fff8e1; border: 1.5px solid #f0c040;
-    border-radius: 10px; padding: 16px; margin-bottom: 16px;
+    background: var(--feedback-warn-bg);
+    border: 1.5px solid var(--feedback-warn-border);
+    border-radius: 9px; padding: 14px; margin-bottom: 16px;
     font-size: 13px; line-height: 1.6; display: none;
   }
   .config-warning.show { display: block; }
   .config-warning strong { display: block; font-size: 14px; margin-bottom: 4px; }
   .config-warning code { background: #f5f2ee; border-radius: 3px; padding: 1px 5px; font-size: 12px; word-break: break-all; }
 
-  /* Results table */
-  .results-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    margin-top: 4px;
+  .toast {
+    position: fixed; top: 18px; right: 18px;
+    padding: 12px 18px; border-radius: 9px;
+    font-weight: 600; font-size: 13px; max-width: 340px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 9999;
+    opacity: 0; transform: translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s; pointer-events: none;
   }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--feedback-success-bg); color: var(--feedback-success-text); border: 1.5px solid var(--feedback-success-border); }
+  .toast.error   { background: var(--feedback-error-bg);   color: var(--feedback-error-text);   border: 1.5px solid var(--feedback-error-border); }
+  .toast.warn    { background: var(--feedback-warn-bg);    color: var(--feedback-warn-text);    border: 1.5px solid var(--feedback-warn-border); }
+
+  /* Status badges */
+  .badge-id {
+    display: inline-block; background: #EFF6FF;
+    border-radius: 4px; padding: 1px 7px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.04em; color: var(--brand-primary);
+    border: 1px solid #BFDBFE;
+  }
+  .status-badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .status-in      { background: var(--status-available-bg); color: var(--status-available-text); }
+  .status-out     { background: var(--status-out-bg);       color: var(--status-out-text); }
+  .status-repair  { background: var(--status-repair-bg);    color: var(--status-repair-text); }
+  .status-replace { background: var(--status-replace-bg);   color: var(--status-replace-text); }
+  .status-retired { background: var(--status-retired-bg);   color: var(--status-retired-text); }
+  .status-lost    { background: var(--status-lost-bg);      color: var(--status-lost-text); }
+
+  /* Results table */
+  .results-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .results-table th {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-align: left;
-    padding: 8px 12px;
-    border-bottom: 1.5px solid var(--border);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted); text-align: left;
+    padding: 7px 11px; border-bottom: 1.5px solid var(--border-default);
   }
-  .results-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #f0ece6;
-    vertical-align: top;
-  }
+  .results-table td { padding: 9px 11px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
   .results-table tr:last-child td { border-bottom: none; }
-  .results-table tr:hover td { background: #faf9f7; }
+  .results-table tr:hover td { background: #F9FAFB; }
 
-  .badge-id {
-    display: inline-block;
-    background: #f0ece6;
-    border-radius: 5px;
-    padding: 2px 8px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--ink);
-  }
-
-  .badge-out     { display:inline-block; background:#fdecea; color:#c0392b; border-radius:5px; padding:2px 8px; font-size:12px; font-weight:600; }
-  .badge-in      { display:inline-block; background:#e8f5ee; color:#2d7a4f; border-radius:5px; padding:2px 8px; font-size:12px; font-weight:600; }
-  .badge-repair  { display:inline-block; background:#fef9e7; color:#b8860b; border-radius:5px; padding:2px 8px; font-size:12px; font-weight:600; }
-  .badge-replace { display:inline-block; background:#fdecea; color:#c0392b; border-radius:5px; padding:2px 8px; font-size:12px; font-weight:600; }
-  .badge-retired { display:inline-block; background:#f0f0f0; color:#666;    border-radius:5px; padding:2px 8px; font-size:12px; font-weight:600; }
-  .badge-lost    { display:inline-block; background:#f3eaf8; color:#7b3fa0; border-radius:5px; padding:2px 8px; font-size:12px; font-weight:600; }
-
-  .empty-state {
-    text-align: center;
-    padding: 32px;
-    color: var(--muted);
-    font-size: 14px;
-  }
-
-  .lookup-row {
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    margin-bottom: 16px;
-  }
+  .lookup-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 14px; }
   .lookup-row .field { flex: 1; margin-bottom: 0; }
 
-  .page-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    color: var(--ink);
+  @media (max-width: 600px) {
+    header { flex-wrap: wrap; gap: 10px; }
+    .header-logo { height: 36px; }
+    .row2, .row3 { grid-template-columns: 1fr; }
+    nav button { padding: 10px 12px; font-size: 13px; }
+    .results-table { font-size: 12px; }
+    .results-table th, .results-table td { padding: 7px 8px; }
   }
 
-  .checkin-line {
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    background: white;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .checkin-line.has-issue { border-color: var(--warn); }
-  .checkin-line.needs-replace { border-color: var(--error); }
 
-  .checkin-line-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 14px;
+  /* ── Check-out tool lines ── */
+  .tool-line {
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 10px; align-items: end;
+    margin-bottom: 10px; padding: 11px;
+    background: #F9FAFB; border: 1.5px solid var(--border-default); border-radius: 7px;
   }
-  .checkin-line .tool-info { font-size: 14px; font-weight: 500; }
-  .checkin-line .tool-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-  .checkin-line-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+  .btn-remove {
+    width: 34px; height: 34px;
+    border: 1.5px solid var(--border-default);
+    background: white; border-radius: 6px;
+    cursor: pointer; font-size: 17px; color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+    flex-shrink: 0; align-self: flex-end;
   }
+  .btn-remove:hover { border-color: var(--status-out-text); color: var(--status-out-text); }
 
-  .btn-report {
-    padding: 6px 12px;
-    background: none;
-    border: 1.5px solid var(--border);
-    border-radius: 7px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
+  .btn-add {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 14px; width: 100%; margin-bottom: 13px;
+    border: 1.5px dashed var(--border-default); background: none; border-radius: 7px;
+    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
   }
-  .btn-report:hover { border-color: var(--warn); color: var(--warn); }
-  .btn-report.active { border-color: var(--warn); color: var(--warn); background: #fef9e7; }
+  .btn-add:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+  /* ── Check-in card ── */
+  .checkin-card {
+    border: 1.5px solid var(--border-default); border-radius: 8px;
+    margin-bottom: 10px; background: white; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .checkin-card.has-issue  { border-color: var(--status-repair-text); }
+  .checkin-card.has-replace { border-color: var(--status-replace-text); }
+
+  .checkin-card-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 13px;
+  }
+  .tool-info { font-size: 14px; font-weight: 500; }
+  .tool-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .duration   { font-size: 12px; color: var(--text-muted); }
+  .duration.long { color: var(--status-repair-text); font-weight: 600; }
+
+  .checkin-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+  .btn-report {
+    padding: 5px 11px; background: none;
+    border: 1.5px solid var(--border-default); border-radius: 6px;
+    font-family: 'Barlow', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-report:hover { border-color: var(--status-repair-text); color: var(--status-repair-text); }
+  .btn-report.active { border-color: var(--status-repair-text); color: var(--status-repair-text); background: var(--status-repair-bg); }
 
   .condition-panel {
-    display: none;
-    padding: 12px 14px 14px;
-    border-top: 1px solid var(--border);
-    background: #fafaf8;
+    display: none; padding: 11px 13px 13px;
+    border-top: 1px solid var(--border-default); background: #FAFAFA;
   }
   .condition-panel.open { display: block; }
-
-  .condition-checks {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 10px;
-  }
+  .condition-checks { display: flex; gap: 18px; margin-bottom: 9px; }
   .condition-check {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    user-select: none;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; font-size: 13px; font-weight: 500; user-select: none;
   }
-  .condition-check input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--orange);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .condition-check.repair-check { color: var(--warn); }
-  .condition-check.replace-check { color: var(--error); }
+  .condition-check input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--brand-primary); cursor: pointer; flex-shrink: 0; }
+  .condition-check.repair-lbl  { color: var(--status-repair-text); }
+  .condition-check.replace-lbl { color: var(--status-replace-text); }
 
   .condition-notes {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 7px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 14px;
-    color: var(--ink);
-    resize: vertical;
-    min-height: 72px;
+    width: 100%; padding: 8px 11px;
+    border: 1.5px solid var(--border-default); border-radius: 6px;
+    font-family: 'Barlow', sans-serif; font-size: 13px;
+    color: var(--text-primary); resize: vertical; min-height: 66px;
     transition: border-color 0.15s;
   }
-  .condition-notes:focus { outline: none; border-color: var(--orange); }
-  .condition-notes::placeholder { color: #bbb; }
+  .condition-notes:focus { outline: none; border-color: var(--brand-primary); }
 
   .btn-checkin {
-    padding: 7px 14px;
-    background: var(--success);
-    color: white;
-    border: none;
-    border-radius: 7px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    flex-shrink: 0;
+    padding: 6px 13px; background: var(--status-available-text);
+    color: white; border: none; border-radius: 6px;
+    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;
   }
   .btn-checkin:hover { opacity: 0.85; }
 
-  .duration {
-    font-size: 12px;
-    color: var(--muted);
+  /* ── By Employee filters ── */
+  .filter-row {
+    display: flex; gap: 10px; align-items: flex-end;
+    margin-bottom: 14px; flex-wrap: wrap;
   }
-  .duration.long { color: var(--warn); font-weight: 600; }
+  .filter-row .field { flex: 1; min-width: 140px; margin-bottom: 0; }
 
-  @media (max-width: 600px) {
-    .row2, .row3 { grid-template-columns: 1fr; }
-    .tool-line { grid-template-columns: 1fr auto; }
-    .tool-line .field:first-child { grid-column: 1 / -1; }
-    nav button { padding: 10px 12px; font-size: 13px; }
-  }
+  /* ── By Tool ── */
+  .search-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 14px; }
+  .search-row .field { flex: 1; margin-bottom: 0; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Tool Tracker</h1>
-  <span class="sub">Shop Inventory</span>
+  <img src="logo.png" alt="Company Logo" class="header-logo">
+  <div class="header-divider"></div>
+  <div>
+    <div class="header-title">Tool Tracker</div>
+    <span class="header-sub">Shop Inventory</span>
+  </div>
+  <a class="header-link" href="tool-admin.html">Admin →</a>
 </header>
 
 <nav>
-  <button class="active" onclick="showPage('checkout')">Check Out</button>
-  <button onclick="showPage('checkin')">Check In</button>
-  <button onclick="showPage('byEmployee')">By Employee</button>
-  <button onclick="showPage('byTool')">By Tool</button>
+  <button class="active" onclick="showPage('checkout', this)">Check Out</button>
+  <button onclick="showPage('checkin', this)">Check In</button>
+  <button onclick="showPage('byEmployee', this)">By Employee</button>
+  <button onclick="showPage('byTool', this)">By Tool</button>
 </nav>
 
 <div id="toast" class="toast"></div>
 
 <div class="container">
-
   <div class="config-warning" id="configWarning">
     <strong>⚠️ Setup required</strong>
-    Open this file in a text editor and replace <code>YOUR_APPS_SCRIPT_URL</code> near the bottom with your deployed Apps Script URL. See the included <strong>SETUP.md</strong> for step-by-step instructions.
+    Replace <code>YOUR_APPS_SCRIPT_URL</code> near the bottom of this file with your deployed Apps Script URL.
   </div>
 
-  <!-- ═══════════════════════ CHECK OUT PAGE ═══════════════════════ -->
+  <!-- CHECK OUT -->
   <div id="page-checkout" class="page active">
     <div class="page-title">Check Out Tools</div>
-
     <div class="card">
       <div class="card-title">Employee</div>
       <div class="field">
         <label>Select Employee</label>
-        <select id="co-employee">
-          <option value="">Loading employees…</option>
-        </select>
+        <select id="co-employee"><option value="">Loading…</option></select>
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">Tools to Check Out</div>
-      <div class="tool-lines" id="co-lines"></div>
-      <button class="btn-add" onclick="addToolLine()">+ Add Tool</button>
+      <div id="co-lines"></div>
+      <button class="btn-add" onclick="addToolLine()">+ Add Another Tool</button>
       <button class="btn-primary" id="co-submit" onclick="submitCheckout()">Check Out Tools</button>
     </div>
   </div>
 
-  <!-- ═══════════════════════ CHECK IN PAGE ═══════════════════════ -->
+  <!-- CHECK IN -->
   <div id="page-checkin" class="page">
     <div class="page-title">Check In Tools</div>
-
     <div class="card">
       <div class="card-title">Select Employee</div>
-      <div class="lookup-row">
-        <div class="field">
-          <label>Employee</label>
-          <select id="ci-employee" onchange="loadEmployeeTools()">
-            <option value="">— Select employee —</option>
-          </select>
-        </div>
+      <div class="field">
+        <label>Employee</label>
+        <select id="ci-employee" onchange="loadEmployeeCheckouts()">
+          <option value="">— Select employee —</option>
+        </select>
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">Tools Currently Checked Out</div>
-      <div id="ci-tool-list">
-        <div class="empty-state">Select an employee to see their checked-out tools.</div>
-      </div>
+      <div id="ci-list"><div class="empty-state">Select an employee above.</div></div>
     </div>
   </div>
 
-  <!-- ═══════════════════════ BY EMPLOYEE PAGE ═══════════════════════ -->
+  <!-- BY EMPLOYEE -->
   <div id="page-byEmployee" class="page">
     <div class="page-title">Tools by Employee</div>
-
     <div class="card">
-      <div class="lookup-row">
+      <div class="filter-row">
         <div class="field">
           <label>Employee</label>
           <select id="be-employee" onchange="lookupByEmployee()">
             <option value="">— Select employee —</option>
           </select>
         </div>
+        <div class="field">
+          <label>Show</label>
+          <select id="be-filter" onchange="lookupByEmployee()">
+            <option value="all">All history</option>
+            <option value="out">Currently out only</option>
+            <option value="returned">Returned only</option>
+          </select>
+        </div>
       </div>
-
-      <div id="be-results">
-        <div class="empty-state">Select an employee to view their checkout history.</div>
-      </div>
+      <div id="be-results"><div class="empty-state">Select an employee to view their history.</div></div>
     </div>
   </div>
 
-  <!-- ═══════════════════════ BY TOOL PAGE ═══════════════════════ -->
+  <!-- BY TOOL -->
   <div id="page-byTool" class="page">
     <div class="page-title">Tool Lookup</div>
-
     <div class="card">
-      <div class="lookup-row">
+      <div class="search-row">
         <div class="field">
           <label>Tool ID or Name</label>
-          <input type="text" id="bt-query" placeholder="e.g. TOOL-042 or Dewalt Drill" onkeydown="if(event.key==='Enter') lookupByTool()">
+          <input type="text" id="bt-query" placeholder="e.g. 000042 or DeWalt Drill" onkeydown="if(event.key==='Enter') lookupByTool()">
         </div>
         <button class="btn-secondary" onclick="lookupByTool()">Search</button>
       </div>
-
-      <div id="bt-results">
-        <div class="empty-state">Enter a tool ID or name to search.</div>
-      </div>
+      <div id="bt-results"><div class="empty-state">Enter a tool ID or name to search.</div></div>
     </div>
   </div>
-
 </div>
 
 <script>
 // ══════════════════════════════════════════════════════
-//  Replace with your deployed Apps Script Web App URL
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPLf-QEcq7nQLO4Bfcd4DiL0C8DvrEGJ1HqEAVQ-skXglzc0BIxUg8X_GWmnTYNoy0TA/exec';
 // ══════════════════════════════════════════════════════
 
-let employees = [];
-let categories = [];
-let toolsByCategory = {};
 
-// ── Init ──────────────────────────────────────────────
-window.onload = async () => {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL') {
-    document.getElementById('configWarning').classList.add('show');
-  }
-  await Promise.all([loadEmployees(), loadCategories()]);
-  addToolLine();
+const STATUS_LABELS = {
+  in:      'Available',
+  out:     'Checked Out',
+  repair:  'Needs Repair',
+  replace: 'Needs Replacement',
+  retired: 'Retired / Disposed',
+  lost:    'Lost'
 };
-
-// ── Navigation ────────────────────────────────────────
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
-
-  if (name === 'checkin') populateSelect('ci-employee');
-  if (name === 'byEmployee') populateSelect('be-employee');
+function statusBadge(status) {
+  const label = STATUS_LABELS[status] || status;
+  return `<span class="status-badge status-${status}">${label}</span>`;
 }
 
-// ── Data loaders ──────────────────────────────────────
-async function api(params) {
-  const url = APPS_SCRIPT_URL + '?' + new URLSearchParams(params);
-  const r = await fetch(url, { redirect: 'follow' });
-  const text = await r.text();
-  try { return JSON.parse(text); }
-  catch { throw new Error('Bad response from server: ' + text.slice(0, 100)); }
+
+let _toastTimer;
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show ' + type;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
 }
 
-async function loadEmployees() {
-  try {
-    const data = await api({ action: 'getEmployees' });
-    employees = data.employees || [];
-    populateSelect('co-employee', true);
-  } catch(e) {
-    employees = [];
-    setSelect('co-employee', [{ value: '', label: 'Error loading employees' }]);
-  }
-}
 
-async function loadCategories() {
-  try {
-    const data = await api({ action: 'getCategories' });
-    categories = data.categories || [];
-    toolsByCategory = data.toolsByCategory || {};
-  } catch(e) {
-    categories = [];
-  }
-}
-
-function populateSelect(id, withPlaceholder = false) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Select employee —</option>';
-  employees.forEach(e => {
-    const opt = document.createElement('option');
-    opt.value = e;
-    opt.textContent = e;
-    sel.appendChild(opt);
-  });
-}
-
-// ── Tool lines ────────────────────────────────────────
-let lineCount = 0;
-
-function addToolLine() {
-  lineCount++;
-  const id = 'line-' + lineCount;
-  const div = document.createElement('div');
-  div.className = 'tool-line';
-  div.id = id;
-
-  // Category select
-  const catWrap = document.createElement('div');
-  catWrap.className = 'field';
-  const catLabel = document.createElement('label');
-  catLabel.textContent = 'Category';
-  const catSel = document.createElement('select');
-  catSel.id = id + '-cat';
-  catSel.innerHTML = '<option value="">— Category —</option>';
-  categories.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    catSel.appendChild(opt);
-  });
-  catSel.onchange = () => updateToolOptions(id);
-  catWrap.appendChild(catLabel);
-  catWrap.appendChild(catSel);
-
-  // Tool select
-  const toolWrap = document.createElement('div');
-  toolWrap.className = 'field';
-  const toolLabel = document.createElement('label');
-  toolLabel.textContent = 'Tool (ID — Name)';
-  const toolSel = document.createElement('select');
-  toolSel.id = id + '-tool';
-  toolSel.innerHTML = '<option value="">— Select category first —</option>';
-  toolWrap.appendChild(toolLabel);
-  toolWrap.appendChild(toolSel);
-
-  // Remove button
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 'btn-remove';
-  removeBtn.innerHTML = '×';
-  removeBtn.title = 'Remove line';
-  removeBtn.onclick = () => div.remove();
-
-  div.appendChild(catWrap);
-  div.appendChild(toolWrap);
-  div.appendChild(removeBtn);
-
-  document.getElementById('co-lines').appendChild(div);
-}
-
-function updateToolOptions(lineId) {
-  const cat = document.getElementById(lineId + '-cat').value;
-  const toolSel = document.getElementById(lineId + '-tool');
-  toolSel.innerHTML = '<option value="">— Select tool —</option>';
-  const tools = toolsByCategory[cat] || [];
-  tools.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.id + ' — ' + t.name;
-    opt.dataset.status = t.status;
-    opt.dataset.checkedOutBy = t.checkedOutBy || '';
-    toolSel.appendChild(opt);
-  });
-}
-
-// ── Check Out ─────────────────────────────────────────
-async function submitCheckout() {
-  const employee = document.getElementById('co-employee').value;
-  if (!employee) { showToast('Please select an employee.', 'error'); return; }
-
-  const lines = document.querySelectorAll('.tool-line');
-  const items = [];
-  let valid = true;
-
-  for (const line of lines) {
-    const id = line.id;
-    const toolSel = document.getElementById(id + '-tool');
-    const toolVal = toolSel.value;
-    if (!toolVal) { valid = false; break; }
-
-    const selectedOpt = toolSel.options[toolSel.selectedIndex];
-    items.push({
-      toolId: toolVal,
-      toolName: selectedOpt.textContent,
-      status: selectedOpt.dataset.status,
-      checkedOutBy: selectedOpt.dataset.checkedOutBy
-    });
-  }
-
-  if (!valid || items.length === 0) {
-    showToast('Please select a tool for each line, or remove empty lines.', 'error');
-    return;
-  }
-
-  // Check for already checked-out tools
-  const conflicts = items.filter(i => i.status === 'out');
-  if (conflicts.length > 0) {
-    const names = conflicts.map(i => `${i.toolId} (checked out to ${i.checkedOutBy})`).join(', ');
-    const proceed = confirm(`The following tool(s) are already checked out:\n\n${names}\n\nProceeding will automatically check them in for the current holder and check them out to ${employee}. Continue?`);
-    if (!proceed) return;
-  }
-
-  const btn = document.getElementById('co-submit');
-  btn.disabled = true;
-  btn.textContent = 'Submitting…';
-
-  try {
-    const result = await api({
-      action: 'checkout',
-      employee,
-      tools: JSON.stringify(items.map(i => i.toolId)),
-      timestamp: new Date().toISOString()
-    });
-
-    if (result.success) {
-      showToast(`✓ ${items.length} tool(s) checked out to ${employee}.`, 'success');
-      document.getElementById('co-lines').innerHTML = '';
-      lineCount = 0;
-      addToolLine();
-      await loadCategories(); // refresh tool availability
-    } else {
-      showToast('Error: ' + (result.error || 'Unknown error'), 'error');
-    }
-  } catch(e) {
-    showToast('Failed to submit: ' + e.message, 'error');
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'Check Out Tools';
-}
-
-// ── Check In ──────────────────────────────────────────
-async function loadEmployeeTools() {
-  const employee = document.getElementById('ci-employee').value;
-  const container = document.getElementById('ci-tool-list');
-  if (!employee) {
-    container.innerHTML = '<div class="empty-state">Select an employee to see their checked-out tools.</div>';
-    return;
-  }
-
-  container.innerHTML = '<div class="empty-state">Loading…</div>';
-
-  try {
-    const data = await api({ action: 'getCheckedOutTools', employee });
-    const tools = data.tools || [];
-
-    if (tools.length === 0) {
-      container.innerHTML = `<div class="empty-state">${employee} has no tools currently checked out.</div>`;
-      return;
-    }
-
-    container.innerHTML = '';
-    tools.forEach(t => {
-      const safeId = t.toolId.replace(/[^a-zA-Z0-9-_]/g, '_');
-      const div = document.createElement('div');
-      div.className = 'checkin-line';
-      div.id = 'ci-' + safeId;
-
-      const dur = getDuration(t.checkedOutAt);
-      div.innerHTML = `
-        <div class="checkin-line-top">
-          <div>
-            <div class="tool-info"><span class="badge-id">${t.toolId}</span> ${t.toolName}</div>
-            <div class="tool-meta">Category: ${t.category} &nbsp;·&nbsp; <span class="duration ${dur.long ? 'long' : ''}">Out for: ${dur.text}</span></div>
-          </div>
-          <div class="checkin-line-actions">
-            <button class="btn-report" id="rpt-${safeId}" onclick="toggleCondition('${safeId}')">⚠ Report Issue</button>
-            <button class="btn-checkin" onclick="checkInTool('${t.toolId}', '${safeId}', '${employee}', this)">Check In</button>
-          </div>
-        </div>
-        <div class="condition-panel" id="cond-${safeId}">
-          <div class="condition-checks">
-            <label class="condition-check repair-check">
-              <input type="checkbox" id="repair-${safeId}" onchange="syncCondition('${safeId}', 'repair')">
-              Needs Repair
-            </label>
-            <label class="condition-check replace-check">
-              <input type="checkbox" id="replace-${safeId}" onchange="syncCondition('${safeId}', 'replace')">
-              Needs Replacement
-            </label>
-          </div>
-          <textarea class="condition-notes" id="notes-${safeId}" placeholder="Describe what happened or what is wrong with the tool…"></textarea>
-        </div>
-      `;
-      container.appendChild(div);
-    });
-  } catch(e) {
-    container.innerHTML = `<div class="empty-state" style="color:var(--error)">Error: ${e.message}</div>`;
-  }
-}
-
-function toggleCondition(safeId) {
-  const panel = document.getElementById('cond-' + safeId);
-  const btn   = document.getElementById('rpt-' + safeId);
-  const isOpen = panel.classList.toggle('open');
-  btn.classList.toggle('active', isOpen);
-}
-
-function syncCondition(safeId, changed) {
-  const repairBox  = document.getElementById('repair-'  + safeId);
-  const replaceBox = document.getElementById('replace-' + safeId);
-  const line = document.getElementById('ci-' + safeId);
-
-  // Mutually exclusive: checking one clears the other
-  if (changed === 'repair'  && repairBox.checked)  replaceBox.checked = false;
-  if (changed === 'replace' && replaceBox.checked) repairBox.checked  = false;
-
-  line.classList.toggle('has-issue',    repairBox.checked);
-  line.classList.toggle('needs-replace', replaceBox.checked);
-}
-
-async function checkInTool(toolId, safeId, employee, btn) {
-  btn.textContent = '…';
-  btn.disabled = true;
-
-  // Gather condition data
-  const needsRepair   = document.getElementById('repair-'  + safeId)?.checked || false;
-  const needsReplace  = document.getElementById('replace-' + safeId)?.checked || false;
-  const conditionNotes = document.getElementById('notes-'  + safeId)?.value.trim() || '';
-
-  // If a condition is flagged but no notes, prompt (soft warning, not a blocker)
-  if ((needsRepair || needsReplace) && !conditionNotes) {
-    const go = confirm('You flagged an issue but left the notes blank. Check in anyway?');
-    if (!go) { btn.textContent = 'Check In'; btn.disabled = false; return; }
-  }
-
-  try {
-    const result = await api({
-      action: 'checkin',
-      toolId,
-      employee,
-      timestamp: new Date().toISOString(),
-      needsRepair:   needsRepair   ? 'yes' : '',
-      needsReplace:  needsReplace  ? 'yes' : '',
-      conditionNotes
-    });
-
-    if (result.success) {
-      document.getElementById('ci-' + safeId)?.remove();
-      const label = needsReplace ? '⚠ Flagged for replacement' : needsRepair ? '⚠ Flagged for repair' : '✓ Checked back in';
-      showToast(`${label}: ${toolId}`, needsReplace || needsRepair ? 'warn' : 'success');
-      await loadCategories();
-      const remaining = document.querySelectorAll('.checkin-line').length;
-      if (remaining === 0) {
-        document.getElementById('ci-tool-list').innerHTML =
-          `<div class="empty-state">${employee} has no tools currently checked out.</div>`;
-      }
-    } else {
-      showToast('Error: ' + (result.error || 'Unknown'), 'error');
-      btn.textContent = 'Check In';
-      btn.disabled = false;
-    }
-  } catch(e) {
-    showToast('Failed: ' + e.message, 'error');
-    btn.textContent = 'Check In';
-    btn.disabled = false;
-  }
-}
-
-// ── By Employee ───────────────────────────────────────
-async function lookupByEmployee() {
-  const employee = document.getElementById('be-employee').value;
-  const container = document.getElementById('be-results');
-  if (!employee) { container.innerHTML = '<div class="empty-state">Select an employee.</div>'; return; }
-
-  container.innerHTML = '<div class="empty-state">Loading…</div>';
-
-  try {
-    const data = await api({ action: 'historyByEmployee', employee });
-    const records = data.records || [];
-
-    if (records.length === 0) {
-      container.innerHTML = `<div class="empty-state">No checkout history for ${employee}.</div>`;
-      return;
-    }
-
-    container.innerHTML = `
-      <table class="results-table">
-        <thead>
-          <tr>
-            <th>Tool ID</th>
-            <th>Tool Name</th>
-            <th>Category</th>
-            <th>Checked Out</th>
-            <th>Checked In</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${records.map(r => `
-            <tr>
-              <td><span class="badge-id">${r.toolId}</span></td>
-              <td>${r.toolName}</td>
-              <td>${r.category}</td>
-              <td>${formatDate(r.checkedOutAt)}</td>
-              <td>${r.checkedInAt ? formatDate(r.checkedInAt) : '—'}</td>
-              <td>${r.checkedInAt ? '<span class="badge-in">Returned</span>' : '<span class="badge-out">Out</span>'}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-  } catch(e) {
-    container.innerHTML = `<div class="empty-state" style="color:var(--error)">Error: ${e.message}</div>`;
-  }
-}
-
-// ── By Tool ───────────────────────────────────────────
-
-async function lookupByTool() {
-  const query = document.getElementById('bt-query').value.trim();
-  const container = document.getElementById('bt-results');
-  if (!query) { showToast('Enter a tool ID or name.', 'warn'); return; }
-
-  container.innerHTML = '<div class="empty-state">Searching…</div>';
-
-  try {
-    const data = await api({ action: 'historyByTool', query });
-    const records = data.records || [];
-
-    if (records.length === 0) {
-      container.innerHTML = `<div class="empty-state">No results found for "${query}".</div>`;
-      return;
-    }
-
-    container.innerHTML = `
-      <table class="results-table">
-        <thead>
-          <tr>
-            <th>Tool ID</th>
-            <th>Tool Name</th>
-            <th>Employee</th>
-            <th>Checked Out</th>
-            <th>Duration / Returned</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${records.map(r => {
-            const dur = r.checkedInAt
-              ? getDurationBetween(r.checkedOutAt, r.checkedInAt).text
-              : getDuration(r.checkedOutAt).text;
-            return `
-              <tr>
-                <td><span class="badge-id">${r.toolId}</span></td>
-                <td>${r.toolName}</td>
-                <td>${r.employee}</td>
-                <td>${formatDate(r.checkedOutAt)}</td>
-                <td>${dur}</td>
-                <td>${r.checkedInAt ? '<span class="badge-in">Returned</span>' : '<span class="badge-out">Out</span>'}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    `;
-  } catch(e) {
-    container.innerHTML = `<div class="empty-state" style="color:var(--error)">Error: ${e.message}</div>`;
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────
-function statusBadge(status, checkedInAt) {
-  if (checkedInAt) return '<span class="badge-in">Returned</span>';
-  const map = {
-    out:     ['badge-out',     'Checked Out'],
-    repair:  ['badge-repair',  'Needs Repair'],
-    replace: ['badge-replace', 'Needs Replacement'],
-    retired: ['badge-retired', 'Retired'],
-    lost:    ['badge-lost',    'Lost'],
-  };
-  const [cls, label] = map[status] || ['badge-out', 'Out'];
-  return `<span class="${cls}">${label}</span>`;
-}
 function formatDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
        + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
-
-function getDuration(isoStart) {
-  const ms = Date.now() - new Date(isoStart).getTime();
-  return formatDuration(ms);
-}
-
-function getDurationBetween(isoStart, isoEnd) {
-  const ms = new Date(isoEnd).getTime() - new Date(isoStart).getTime();
-  return formatDuration(ms);
-}
-
+function getDuration(isoStart) { return formatDuration(Date.now() - new Date(isoStart).getTime()); }
+function getDurationBetween(a, b) { return formatDuration(new Date(b).getTime() - new Date(a).getTime()); }
 function formatDuration(ms) {
-  const mins = Math.floor(ms / 60000);
-  const hrs  = Math.floor(mins / 60);
-  const days = Math.floor(hrs / 24);
+  const mins = Math.floor(ms / 60000), hrs = Math.floor(mins / 60), days = Math.floor(hrs / 24);
   let text;
-  if (days > 0)       text = days + 'd ' + (hrs % 24) + 'h';
-  else if (hrs > 0)   text = hrs + 'h ' + (mins % 60) + 'm';
-  else                text = mins + 'm';
+  if (days > 0) text = days + 'd ' + (hrs % 24) + 'h';
+  else if (hrs > 0) text = hrs + 'h ' + (mins % 60) + 'm';
+  else text = mins + 'm';
   return { text, long: days >= 7 };
 }
 
-let toastTimer;
-function showToast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast show ' + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
+
+async function api(params) {
+  const url = APPS_SCRIPT_URL + '?' + new URLSearchParams(params);
+  const r = await fetch(url, { redirect: 'follow' });
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch { throw new Error('Bad response: ' + text.slice(0, 120)); }
+}
+
+
+let employees = [], categories = [], toolsByCategory = {};
+let lineCount = 0;
+
+window.onload = async () => {
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL') document.getElementById('configWarning').classList.add('show');
+  await Promise.all([loadEmployees(), loadCategories()]);
+  addToolLine();
+};
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'checkin')     populateSelect('ci-employee');
+  if (name === 'byEmployee')  populateSelect('be-employee');
+}
+
+async function loadEmployees() {
+  try {
+    const d = await api({ action: 'getEmployees' });
+    employees = d.employees || [];
+    populateSelect('co-employee', true);
+  } catch(e) { employees = []; }
+}
+
+async function loadCategories() {
+  try {
+    const d = await api({ action: 'getCategories' });
+    categories = d.categories || [];
+    toolsByCategory = d.toolsByCategory || {};
+  } catch(e) { categories = []; }
+}
+
+function populateSelect(id, withPrompt = false) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select employee —</option>';
+  if (withPrompt) sel.innerHTML = '<option value="">— Select employee —</option>';
+  employees.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e; o.textContent = e; sel.appendChild(o);
+  });
+}
+
+// ── Check Out ─────────────────────────────────────────
+function addToolLine() {
+  lineCount++;
+  const lid = 'line-' + lineCount;
+  const div = document.createElement('div');
+  div.className = 'tool-line'; div.id = lid;
+
+  const catWrap = document.createElement('div'); catWrap.className = 'field';
+  const catLabel = document.createElement('label'); catLabel.textContent = 'Category';
+  const catSel = document.createElement('select'); catSel.id = lid + '-cat';
+  catSel.innerHTML = '<option value="">— Category —</option>';
+  categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+  catSel.onchange = () => updateToolOptions(lid);
+  catWrap.appendChild(catLabel); catWrap.appendChild(catSel);
+
+  const toolWrap = document.createElement('div'); toolWrap.className = 'field';
+  const toolLabel = document.createElement('label'); toolLabel.textContent = 'Tool (ID — Name)';
+  const toolSel = document.createElement('select'); toolSel.id = lid + '-tool';
+  toolSel.innerHTML = '<option value="">— Select category first —</option>';
+  toolWrap.appendChild(toolLabel); toolWrap.appendChild(toolSel);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'btn-remove'; removeBtn.innerHTML = '×'; removeBtn.title = 'Remove';
+  removeBtn.onclick = () => div.remove();
+
+  div.appendChild(catWrap); div.appendChild(toolWrap); div.appendChild(removeBtn);
+  document.getElementById('co-lines').appendChild(div);
+}
+
+function updateToolOptions(lid) {
+  const cat = document.getElementById(lid + '-cat').value;
+  const toolSel = document.getElementById(lid + '-tool');
+  toolSel.innerHTML = '<option value="">— Select tool —</option>';
+  (toolsByCategory[cat] || []).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = t.id + ' — ' + t.name + (t.status !== 'in' ? ' [' + (STATUS_LABELS[t.status] || t.status) + ']' : '');
+    o.dataset.status = t.status;
+    o.dataset.checkedOutBy = t.checkedOutBy || '';
+    toolSel.appendChild(o);
+  });
+}
+
+async function submitCheckout() {
+  const employee = document.getElementById('co-employee').value;
+  if (!employee) { showToast('Please select an employee.', 'error'); return; }
+
+  const lines = document.querySelectorAll('.tool-line');
+  const items = []; let valid = true;
+  for (const line of lines) {
+    const toolSel = document.getElementById(line.id + '-tool');
+    const val = toolSel.value;
+    if (!val) { valid = false; break; }
+    const opt = toolSel.options[toolSel.selectedIndex];
+    items.push({ toolId: val, toolName: opt.textContent, status: opt.dataset.status, checkedOutBy: opt.dataset.checkedOutBy });
+  }
+  if (!valid || items.length === 0) { showToast('Please select a tool for each line, or remove empty lines.', 'error'); return; }
+
+  const conflicts = items.filter(i => i.status !== 'in');
+  if (conflicts.length > 0) {
+    const names = conflicts.map(i => i.toolId + ' (' + (STATUS_LABELS[i.status] || i.status) + (i.checkedOutBy ? ', held by ' + i.checkedOutBy : '') + ')').join('\n');
+    const go = confirm('The following tools are not currently available:\n\n' + names + '\n\nProceeding will override their current status. Continue?');
+    if (!go) return;
+  }
+
+  const btn = document.getElementById('co-submit');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    const r = await api({ action: 'checkout', employee, tools: JSON.stringify(items.map(i => i.toolId)), timestamp: new Date().toISOString() });
+    if (r.success) {
+      showToast('✓ ' + items.length + ' tool(s) checked out to ' + employee + '.', 'success');
+      document.getElementById('co-lines').innerHTML = ''; lineCount = 0;
+      addToolLine(); await loadCategories();
+    } else showToast('Error: ' + (r.error || 'Unknown'), 'error');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Check Out Tools';
+}
+
+// ── Check In ──────────────────────────────────────────
+async function loadEmployeeCheckouts() {
+  const employee = document.getElementById('ci-employee').value;
+  const container = document.getElementById('ci-list');
+  if (!employee) { container.innerHTML = '<div class="empty-state">Select an employee above.</div>'; return; }
+  container.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const d = await api({ action: 'getCheckedOutTools', employee });
+    const tools = d.tools || [];
+    if (!tools.length) { container.innerHTML = '<div class="empty-state">' + employee + ' has no tools currently checked out.</div>'; return; }
+    container.innerHTML = '';
+    tools.forEach(t => {
+      const sid = t.toolId.replace(/[^a-zA-Z0-9_]/g, '_');
+      const dur = getDuration(t.checkedOutAt);
+      const card = document.createElement('div');
+      card.className = 'checkin-card'; card.id = 'ci-' + sid;
+      card.innerHTML = `
+        <div class="checkin-card-top">
+          <div>
+            <div class="tool-info"><span class="badge-id">${t.toolId}</span> ${t.toolName}</div>
+            <div class="tool-meta">Category: ${t.category} &nbsp;·&nbsp; <span class="duration ${dur.long ? 'long' : ''}">Out: ${dur.text}</span></div>
+          </div>
+          <div class="checkin-actions">
+            <button class="btn-report" id="rpt-${sid}" onclick="toggleCondition('${sid}')">⚠ Issue</button>
+            <button class="btn-checkin" onclick="doCheckin('${t.toolId}', '${sid}', '${employee}', this)">Check In</button>
+          </div>
+        </div>
+        <div class="condition-panel" id="cond-${sid}">
+          <div class="condition-checks">
+            <label class="condition-check repair-lbl"><input type="checkbox" id="repair-${sid}" onchange="syncCondition('${sid}', 'repair')"> Needs Repair</label>
+            <label class="condition-check replace-lbl"><input type="checkbox" id="replace-${sid}" onchange="syncCondition('${sid}', 'replace')"> Needs Replacement</label>
+          </div>
+          <textarea class="condition-notes" id="notes-${sid}" placeholder="Describe what happened or what is wrong with the tool…"></textarea>
+        </div>`;
+      container.appendChild(card);
+    });
+  } catch(e) { container.innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>'; }
+}
+
+function toggleCondition(sid) {
+  document.getElementById('cond-' + sid).classList.toggle('open');
+  document.getElementById('rpt-' + sid).classList.toggle('active');
+}
+function syncCondition(sid, changed) {
+  const r = document.getElementById('repair-' + sid);
+  const x = document.getElementById('replace-' + sid);
+  const card = document.getElementById('ci-' + sid);
+  if (changed === 'repair' && r.checked) x.checked = false;
+  if (changed === 'replace' && x.checked) r.checked = false;
+  card.classList.toggle('has-issue', r.checked);
+  card.classList.toggle('has-replace', x.checked);
+}
+
+async function doCheckin(toolId, sid, employee, btn) {
+  btn.textContent = '…'; btn.disabled = true;
+  const needsRepair  = document.getElementById('repair-'  + sid)?.checked || false;
+  const needsReplace = document.getElementById('replace-' + sid)?.checked || false;
+  const notes = document.getElementById('notes-' + sid)?.value.trim() || '';
+  if ((needsRepair || needsReplace) && !notes) {
+    const go = confirm('Issue flagged but notes are blank. Check in anyway?');
+    if (!go) { btn.textContent = 'Check In'; btn.disabled = false; return; }
+  }
+  try {
+    const r = await api({ action: 'checkin', toolId, employee, timestamp: new Date().toISOString(),
+      needsRepair: needsRepair ? 'yes' : '', needsReplace: needsReplace ? 'yes' : '', conditionNotes: notes });
+    if (r.success) {
+      document.getElementById('ci-' + sid)?.remove();
+      const label = needsReplace ? '⚠ Flagged for replacement' : needsRepair ? '⚠ Flagged for repair' : '✓ Checked in';
+      showToast(label + ': ' + toolId, needsReplace || needsRepair ? 'warn' : 'success');
+      await loadCategories();
+      if (!document.querySelectorAll('.checkin-card').length)
+        document.getElementById('ci-list').innerHTML = '<div class="empty-state">' + employee + ' has no tools currently checked out.</div>';
+    } else { showToast('Error: ' + (r.error || 'Unknown'), 'error'); btn.textContent = 'Check In'; btn.disabled = false; }
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); btn.textContent = 'Check In'; btn.disabled = false; }
+}
+
+// ── By Employee ───────────────────────────────────────
+async function lookupByEmployee() {
+  const employee = document.getElementById('be-employee').value;
+  const filter   = document.getElementById('be-filter').value;
+  const container = document.getElementById('be-results');
+  if (!employee) { container.innerHTML = '<div class="empty-state">Select an employee.</div>'; return; }
+  container.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const d = await api({ action: 'historyByEmployee', employee });
+    let records = d.records || [];
+    if (filter === 'out')      records = records.filter(r => !r.checkedInAt);
+    if (filter === 'returned') records = records.filter(r =>  r.checkedInAt);
+    if (!records.length) { container.innerHTML = '<div class="empty-state">No records match the current filter.</div>'; return; }
+    container.innerHTML = `
+      <table class="results-table">
+        <thead><tr>
+          <th>Tool ID</th><th>Name</th><th>Category</th>
+          <th>Checked Out</th><th>Checked In</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${records.map(r => `<tr>
+            <td><span class="badge-id">${r.toolId}</span></td>
+            <td>${r.toolName}</td><td>${r.category}</td>
+            <td>${formatDate(r.checkedOutAt)}</td>
+            <td>${r.checkedInAt ? formatDate(r.checkedInAt) : '—'}</td>
+            <td>${r.checkedInAt ? '<span class="status-badge status-in">Returned</span>' : '<span class="status-badge status-out">Out</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:9px;text-align:right">${records.length} record${records.length!==1?'s':''}</div>`;
+  } catch(e) { container.innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>'; }
+}
+
+// ── By Tool ───────────────────────────────────────────
+async function lookupByTool() {
+  const query = document.getElementById('bt-query').value.trim();
+  const container = document.getElementById('bt-results');
+  if (!query) { showToast('Enter a tool ID or name.', 'warn'); return; }
+  container.innerHTML = '<div class="empty-state">Searching…</div>';
+  try {
+    const d = await api({ action: 'historyByTool', query });
+    const records = d.records || [];
+    if (!records.length) { container.innerHTML = '<div class="empty-state">No results for "' + query + '".</div>'; return; }
+    container.innerHTML = `
+      <table class="results-table">
+        <thead><tr>
+          <th>Tool ID</th><th>Name</th><th>Employee</th>
+          <th>Checked Out</th><th>Duration / Returned</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${records.map(r => {
+            const dur = r.checkedInAt ? getDurationBetween(r.checkedOutAt, r.checkedInAt).text : getDuration(r.checkedOutAt).text;
+            return `<tr>
+              <td><span class="badge-id">${r.toolId}</span></td>
+              <td>${r.toolName}</td><td>${r.employee}</td>
+              <td>${formatDate(r.checkedOutAt)}</td><td>${dur}</td>
+              <td>${r.checkedInAt ? '<span class="status-badge status-in">Returned</span>' : '<span class="status-badge status-out">Out</span>'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:9px;text-align:right">${records.length} record${records.length!==1?'s':''}</div>`;
+  } catch(e) { container.innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>'; }
 }
 </script>
-
 </body>
 </html>
