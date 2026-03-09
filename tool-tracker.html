@@ -480,7 +480,7 @@
 
 <script>
 // ══════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPLf-QEcq7nQLO4Bfcd4DiL0C8DvrEGJ1HqEAVQ-skXglzc0BIxUg8X_GWmnTYNoy0TA/exec';
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL';
 // ══════════════════════════════════════════════════════
 
 
@@ -668,8 +668,16 @@ async function loadEmployeeCheckouts() {
     const tools = d.tools || [];
     if (!tools.length) { container.innerHTML = '<div class="empty-state">' + employee + ' has no tools currently checked out.</div>'; return; }
     container.innerHTML = '';
-    tools.forEach(t => {
-      const sid = t.toolId.replace(/[^a-zA-Z0-9_]/g, '_');
+    tools.forEach(rawT => {
+      // Normalize field names — Apps Script may return PascalCase column headers
+      const t = {
+        toolId:       rawT.toolId       || rawT.ToolID        || rawT['Tool ID']   || '',
+        toolName:     rawT.toolName     || rawT.ToolName      || rawT['Tool Name'] || '',
+        category:     rawT.category     || rawT.Category      || '',
+        checkedOutAt: rawT.checkedOutAt || rawT.CheckedOutAt  || '',
+      };
+      const sid = String(t.toolId).replace(/[^a-zA-Z0-9_]/g, '_');
+      if (!sid) return; // skip malformed rows
       const dur = getDuration(t.checkedOutAt);
       const card = document.createElement('div');
       card.className = 'checkin-card'; card.id = 'ci-' + sid;
