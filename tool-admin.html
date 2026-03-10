@@ -606,7 +606,7 @@ async function suggestNextId() {
       .filter(n => !isNaN(n) && n > 0);
     const next = nums.length ? Math.max(...nums) + 1 : 1;
     const field = document.getElementById('add-id');
-    if (field && !field.value) field.value = String(next).padStart(6, '0');
+    if (field && !field.value) field.value = String(next).padStart(3, '0');
   } catch(e) {
     // Non-fatal — user can enter ID manually
   }
@@ -620,7 +620,7 @@ function calcNextId() {
     ...queue.map(q => parseInt(String(q.id).replace(/\D/g,''), 10)),
     ...allTools.map(t => parseInt(String(t.id||'').replace(/\D/g,''), 10))
   ].filter(n => !isNaN(n) && n > 0);
-  return String(nums.length ? Math.max(...nums) + 1 : 1).padStart(6, '0');
+  return String(nums.length ? Math.max(...nums) + 1 : 1).padStart(3, '0');
 }
 
 function refreshIdDisplay() {

@@ -614,14 +614,32 @@ function addToolLine() {
   document.getElementById('co-lines').appendChild(div);
 }
 
+const STATUS_ICONS = {
+  in:      '',
+  out:     '🔴 ',
+  repair:  '🔧 ',
+  replace: '⚠️ ',
+};
+
 function updateToolOptions(lid) {
   const cat = document.getElementById(lid + '-cat').value;
   const toolSel = document.getElementById(lid + '-tool');
   toolSel.innerHTML = '<option value="">— Select tool —</option>';
-  (toolsByCategory[cat] || []).forEach(t => {
+
+  // Sort: available first, then by ID
+  const tools = [...(toolsByCategory[cat] || [])].sort((a, b) => {
+    if (a.status === 'in' && b.status !== 'in') return -1;
+    if (a.status !== 'in' && b.status === 'in') return 1;
+    return a.id.localeCompare(b.id);
+  });
+
+  tools.forEach(t => {
     const o = document.createElement('option');
     o.value = t.id;
-    o.textContent = t.id + ' — ' + t.name + (t.status !== 'in' ? ' [' + (STATUS_LABELS[t.status] || t.status) + ']' : '');
+    const icon   = STATUS_ICONS[t.status] || '';
+    const suffix = t.status === 'out'    ? ' — checked out to ' + (t.checkedOutBy || '?') :
+                   t.status !== 'in'     ? ' — ' + (STATUS_LABELS[t.status] || t.status) : '';
+    o.textContent = icon + t.id + ' — ' + t.name + suffix;
     o.dataset.status = t.status;
     o.dataset.checkedOutBy = t.checkedOutBy || '';
     toolSel.appendChild(o);

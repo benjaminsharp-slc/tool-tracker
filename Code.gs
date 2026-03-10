@@ -68,6 +68,13 @@ function sheetToObjects(sheet, headers) {
   });
 }
 
+// ── normalizeId ────────────────────────────────────────────────────────
+// Strips non-digits and returns numeric string so 1, "1", "001" all match
+function normalizeId(val) {
+  const n = parseInt(String(val || '').replace(/\D/g, ''), 10);
+  return isNaN(n) ? String(val || '').toLowerCase().trim() : String(n);
+}
+
 // ── getEmployees ───────────────────────────────────────────────────────
 function getEmployees() {
   const sheet = getSheet(SHEET_EMPLOYEES);
@@ -96,8 +103,8 @@ function getCategoriesOnly() {
 }
 
 // ── getCategories + tools ──────────────────────────────────────────────
-// Returns categories and tools for the checkout page
-// Only 'in' status tools show as available
+// Returns ALL tools with status info for the checkout page
+// All statuses included so the UI can show visual indicators
 function getCategories() {
   const sheet = getSheet(SHEET_TOOLS);
   const rows = sheetToObjects(sheet);
@@ -106,18 +113,24 @@ function getCategories() {
   const toolsByCategory = {};
 
   rows.forEach(r => {
-    const cat  = String(r['Category'] || '').trim();
-    const id   = String(r['ToolID']   || '').trim();
-    const name = String(r['Name']     || '').trim();
-    if (!cat || !id) return;
+    const cat    = String(r['Category'] || '').trim();
+    const rawId  = String(r['ToolID']   || '').trim();
+    const name   = String(r['Name']     || '').trim();
+    if (!cat || !rawId) return;
+
+    const id = normalizeId(rawId).padStart(3, '0');
+    const status = String(r['Status'] || 'in').toLowerCase();
+
+    // Skip permanently out-of-service tools — no point selecting them
+    if (status === 'retired' || status === 'lost') return;
 
     catSet.add(cat);
     if (!toolsByCategory[cat]) toolsByCategory[cat] = [];
     toolsByCategory[cat].push({
       id,
       name,
-      status:       String(r['Status'] || 'in').toLowerCase(),
-      checkedOutBy: String(r['CheckedOutBy'] || '')
+      status,
+      checkedOutBy: String(r['CheckedOutBy'] || '').trim()
     });
   });
 
@@ -136,7 +149,7 @@ function getAllTools() {
   const tools = rows
     .filter(r => String(r['ToolID'] || '').trim() !== '')
     .map(r => ({
-      id:           (n => !isNaN(n) ? String(n).padStart(6,'0') : raw)(parseInt((String(r['ToolID']||'').trim()).replace(/\D/g,''),10)),
+      id:           (n => !isNaN(n) ? String(n).padStart(3,'0') : raw)(parseInt((String(r['ToolID']||'').trim()).replace(/\D/g,''),10)),
       name:         String(r['Name']           || '').trim(),
       category:     String(r['Category']       || '').trim(),
       status:       String(r['Status']         || 'in').toLowerCase(),
@@ -182,11 +195,15 @@ function addTools(params) {
 
   tools.forEach(t => {
     const row = new Array(headers.length).fill('');
-    row[idCol]     = t.id.toUpperCase();
+    row[idCol]     = t.id; // stored as string; cell formatted as text below
     row[nameCol]   = t.name;
     row[catCol]    = t.category;
     row[statusCol] = 'in';
+    const newRow = sheet.getLastRow() + 1;
     sheet.appendRow(row);
+    // Format the ToolID cell as plain text so leading zeros are preserved
+    sheet.getRange(newRow, idCol + 1).setNumberFormat('@');
+    sheet.getRange(newRow, idCol + 1).setValue(t.id);
   });
 
   return { success: true, added: tools.length };
@@ -351,7 +368,7 @@ function getCheckedOutTools(params) {
     .filter(r => String(r['Status']).toLowerCase() === 'out' &&
                  String(r['CheckedOutBy']).trim() === employee)
     .map(r => ({
-      toolId:       r['ToolID'],
+      toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
       toolName:     r['Name'],
       category:     r['Category'],
       checkedOutAt: r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : ''
@@ -361,37 +378,68 @@ function getCheckedOutTools(params) {
 }
 
 // ── historyByEmployee ──────────────────────────────────────────────────
+// Returns full log history for an employee.
+// "Currently out" is determined from the Tools sheet (source of truth),
+// not inferred from log pairs — avoids duplicates and sync issues.
 function historyByEmployee(params) {
   const employee = params.employee;
-  const sheet = getSheet(SHEET_LOG);
-  const rows = sheetToObjects(sheet);
 
-  const records = rows
+  // Get currently checked-out tools from Tools sheet
+  const toolSheet = getSheet(SHEET_TOOLS);
+  const toolRows  = sheetToObjects(toolSheet);
+  const currentlyOut = new Set(
+    toolRows
+      .filter(r => String(r['Status']).toLowerCase() === 'out' &&
+                   String(r['CheckedOutBy']).trim() === employee)
+      .map(r => normalizeId(r['ToolID']))
+  );
+
+  // Get full history from log
+  const logSheet = getSheet(SHEET_LOG);
+  const logRows  = sheetToObjects(logSheet);
+
+  const records = logRows
     .filter(r => String(r['Employee']).trim() === employee && r['EventType'] === 'checkout')
     .map(r => ({
-      toolId:       r['ToolID'],
+      toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
       toolName:     r['ToolName'],
       category:     r['Category'],
       checkedOutAt: r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '',
-      checkedInAt:  r['CheckedInAt']  ? new Date(r['CheckedInAt']).toISOString()  : ''
+      // Use Tools sheet as source of truth for whether it's still out
+      checkedInAt:  currentlyOut.has(normalizeId(r['ToolID'])) ? '' :
+                    (r['CheckedInAt'] ? new Date(r['CheckedInAt']).toISOString() : '')
     }))
     .reverse();
 
-  return { records };
+  // Deduplicate: for currently-out tools, only keep the most recent checkout entry
+  const seen = new Set();
+  const deduped = records.filter(r => {
+    const id = r.toolId;
+    if (!r.checkedInAt) {
+      // Currently out — only show once (most recent, since records are reversed)
+      if (seen.has(id)) return false;
+      seen.add(id);
+    }
+    return true;
+  });
+
+  return { records: deduped };
 }
 
 // ── historyByTool ──────────────────────────────────────────────────────
 function historyByTool(params) {
-  const query = String(params.query || '').toLowerCase().trim();
+  const raw = String(params.query || '').trim();
+  const queryNum = normalizeId(raw);
+  const queryStr = raw.toLowerCase();
   const sheet = getSheet(SHEET_LOG);
   const rows = sheetToObjects(sheet);
 
   const records = rows
     .filter(r => r['EventType'] === 'checkout' &&
-      (String(r['ToolID']).toLowerCase().includes(query) ||
-       String(r['ToolName']).toLowerCase().includes(query)))
+      (normalizeId(r['ToolID']) === queryNum ||
+       String(r['ToolName']).toLowerCase().includes(queryStr)))
     .map(r => ({
-      toolId:       r['ToolID'],
+      toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
       toolName:     r['ToolName'],
       category:     r['Category'],
       employee:     r['Employee'],
@@ -406,17 +454,19 @@ function historyByTool(params) {
 // ── fullHistory ────────────────────────────────────────────────────────
 // Returns every log entry for a given tool ID or name (for admin audit tab)
 function fullHistory(params) {
-  const query = String(params.query || '').toLowerCase().trim();
+  const raw = String(params.query || '').trim();
+  const queryNum = normalizeId(raw);
+  const queryStr = raw.toLowerCase();
   const sheet = getSheet(SHEET_LOG);
   const rows = sheetToObjects(sheet);
 
   const records = rows
     .filter(r =>
-      String(r['ToolID']).toLowerCase().includes(query) ||
-      String(r['ToolName']).toLowerCase().includes(query)
+      normalizeId(r['ToolID']) === queryNum ||
+      String(r['ToolName']).toLowerCase().includes(queryStr)
     )
     .map(r => ({
-      toolId:         String(r['ToolID']         || ''),
+      toolId:         normalizeId(r['ToolID']).padStart(3, '0'),
       toolName:       String(r['ToolName']        || ''),
       eventType:      String(r['EventType']       || ''),
       employee:       String(r['Employee']        || ''),
