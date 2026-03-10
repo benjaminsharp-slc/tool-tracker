@@ -75,6 +75,16 @@ function normalizeId(val) {
   return isNaN(n) ? String(val || '').toLowerCase().trim() : String(n);
 }
 
+// ── logRow ─────────────────────────────────────────────────────────────
+// Appends a row to the log sheet and formats the ToolID cell as plain text
+// so leading zeros are preserved (Sheets auto-converts "002" to 2 otherwise)
+function logRow(sheet, row) {
+  sheet.appendRow(row);
+  const newRowNum = sheet.getLastRow();
+  // ToolID is always column 2 (index 1) in the log
+  sheet.getRange(newRowNum, 2).setNumberFormat('@').setValue(row[1]);
+}
+
 // ── getEmployees ───────────────────────────────────────────────────────
 function getEmployees() {
   const sheet = getSheet(SHEET_EMPLOYEES);
@@ -270,7 +280,7 @@ function checkout(params) {
         const prevTime   = toolData[i][checkedOutAtCol];
 
         if (toolData[i][statusCol] === 'out' && prevHolder) {
-          logSheet.appendRow([
+          logRow(logSheet, [
             new Date(timestamp), toolId,
             toolData[i][nameCol], toolData[i][categoryCol],
             prevHolder,
@@ -285,7 +295,7 @@ function checkout(params) {
         toolSheet.getRange(rowNum, checkedOutByCol + 1).setValue(employee);
         toolSheet.getRange(rowNum, checkedOutAtCol + 1).setValue(new Date(timestamp));
 
-        logSheet.appendRow([
+        logRow(logSheet, [
           new Date(timestamp), toolId,
           toolData[i][nameCol], toolData[i][categoryCol],
           employee, new Date(timestamp), '',
@@ -335,7 +345,7 @@ function checkin(params) {
                       : needsRepair  ? 'repair'
                       : 'in';
 
-      logSheet.appendRow([
+      logRow(logSheet, [
         new Date(timestamp), toolId,
         toolData[i][nameCol], toolData[i][categoryCol],
         employee,
