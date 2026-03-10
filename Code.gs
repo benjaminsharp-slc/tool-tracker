@@ -384,7 +384,7 @@ function getCheckedOutTools(params) {
 function historyByEmployee(params) {
   const employee = params.employee;
 
-  // Get currently checked-out tools from Tools sheet
+  // Get currently checked-out tools from Tools sheet (source of truth)
   const toolSheet = getSheet(SHEET_TOOLS);
   const toolRows  = sheetToObjects(toolSheet);
   const currentlyOut = new Set(
@@ -394,36 +394,41 @@ function historyByEmployee(params) {
       .map(r => normalizeId(r['ToolID']))
   );
 
-  // Get full history from log
   const logSheet = getSheet(SHEET_LOG);
   const logRows  = sheetToObjects(logSheet);
 
+  // Build a lookup of checkin events keyed by toolId+checkedOutAt
+  // so we can match them to their originating checkout rows
+  const checkinMap = {};
+  logRows
+    .filter(r => r['EventType'] === 'checkin')
+    .forEach(r => {
+      const key = normalizeId(r['ToolID']) + '|' + (r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '');
+      checkinMap[key] = r['CheckedInAt'] ? new Date(r['CheckedInAt']).toISOString() : '';
+    });
+
+  // Build records from checkout rows, joining checkin time from the map
   const records = logRows
     .filter(r => String(r['Employee']).trim() === employee && r['EventType'] === 'checkout')
-    .map(r => ({
-      toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
-      toolName:     r['ToolName'],
-      category:     r['Category'],
-      checkedOutAt: r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '',
-      // Use Tools sheet as source of truth for whether it's still out
-      checkedInAt:  currentlyOut.has(normalizeId(r['ToolID'])) ? '' :
-                    (r['CheckedInAt'] ? new Date(r['CheckedInAt']).toISOString() : '')
-    }))
-    .reverse();
+    .map(r => {
+      const toolIdNorm  = normalizeId(r['ToolID']);
+      const checkedOutAt = r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '';
+      const key = toolIdNorm + '|' + checkedOutAt;
 
-  // Deduplicate: for currently-out tools, only keep the most recent checkout entry
-  const seen = new Set();
-  const deduped = records.filter(r => {
-    const id = r.toolId;
-    if (!r.checkedInAt) {
-      // Currently out — only show once (most recent, since records are reversed)
-      if (seen.has(id)) return false;
-      seen.add(id);
-    }
-    return true;
-  });
+      // Use Tools sheet as source of truth for currently-out status
+      let checkedInAt = currentlyOut.has(toolIdNorm) ? '' : (checkinMap[key] || '');
 
-  return { records: deduped };
+      return {
+        toolId:      toolIdNorm.padStart(3, '0'),
+        toolName:    r['ToolName'],
+        category:    r['Category'],
+        checkedOutAt,
+        checkedInAt
+      };
+    });
+
+  records.reverse();
+  return { records };
 }
 
 // ── historyByTool ──────────────────────────────────────────────────────
