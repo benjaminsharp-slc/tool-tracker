@@ -797,20 +797,19 @@ async function lookupByEmployee() {
     let records = d.records || [];
     if (filter === 'out')      records = records.filter(r => r.currentlyOut);
     if (filter === 'returned') records = records.filter(r => !r.currentlyOut);
-    if (!records.length) { container.innerHTML = '<div class="empty-state">No records match the current filter.</div>'; return; }
+    if (!records.length) { container.innerHTML = '<div class="empty-state">' + employee + ' has no tools currently checked out.</div>'; return; }
     container.innerHTML = `
       <table class="results-table">
         <thead><tr>
           <th>Tool ID</th><th>Name</th><th>Category</th>
-          <th>Checked Out</th><th>Checked In</th><th>Status</th>
+          <th>Checked Out</th><th>Time Out</th>
         </tr></thead>
         <tbody>
           ${records.map(r => `<tr>
             <td><span class="badge-id">${r.toolId}</span></td>
             <td>${r.toolName}</td><td>${r.category}</td>
             <td>${formatDate(r.checkedOutAt)}</td>
-            <td>${r.checkedInAt ? formatDate(r.checkedInAt) : r.currentlyOut ? '<em style="color:var(--text-muted);font-size:12px">' + getDuration(r.checkedOutAt).text + '</em>' : '—'}</td>
-            <td>${r.currentlyOut ? '<span class="status-badge status-out">Out</span>' : r.checkedInAt ? '<span class="status-badge status-in">Returned</span>' : '—'}</td>
+            <td><span class="duration ${getDuration(r.checkedOutAt).cls}">${getDuration(r.checkedOutAt).text}</span></td>
           </tr>`).join('')}
         </tbody>
       </table>
