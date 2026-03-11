@@ -455,14 +455,7 @@
             <option value="">— Select employee —</option>
           </select>
         </div>
-        <div class="field">
-          <label>Show</label>
-          <select id="be-filter" onchange="lookupByEmployee()">
-            <option value="all">All history</option>
-            <option value="out">Currently out only</option>
-            <option value="returned">Returned only</option>
-          </select>
-        </div>
+<input type="hidden" id="be-filter" value="out">
       </div>
       <div id="be-results"><div class="empty-state">Select an employee to view their history.</div></div>
     </div>
