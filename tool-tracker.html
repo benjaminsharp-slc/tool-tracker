@@ -475,7 +475,7 @@
       <div class="search-row">
         <div class="field">
           <label>Tool ID or Name</label>
-          <input type="text" id="bt-query" placeholder="e.g. 000042 or DeWalt Drill" onkeydown="if(event.key==='Enter') lookupByTool()">
+          <input type="text" id="bt-query" placeholder="e.g. 042 or DeWalt Drill" onkeydown="if(event.key==='Enter') lookupByTool()">
         </div>
         <button class="btn-secondary" onclick="lookupByTool()">Search</button>
       </div>
@@ -621,13 +621,21 @@ const STATUS_ICONS = {
   replace: '⚠️ ',
 };
 
+// Statuses that can be selected for checkout
+// repair/replace/lost/retired are not selectable — tool isn't available
+const CHECKOUT_ALLOWED = new Set(['in', 'out']);
+
 function updateToolOptions(lid) {
   const cat = document.getElementById(lid + '-cat').value;
   const toolSel = document.getElementById(lid + '-tool');
   toolSel.innerHTML = '<option value="">— Select tool —</option>';
 
-  // Sort: available first, then by ID
+  // Sort: available (in) first, then checked out, then disabled
   const tools = [...(toolsByCategory[cat] || [])].sort((a, b) => {
+    const aOk = CHECKOUT_ALLOWED.has(a.status);
+    const bOk = CHECKOUT_ALLOWED.has(b.status);
+    if (aOk && !bOk) return -1;
+    if (!aOk && bOk) return 1;
     if (a.status === 'in' && b.status !== 'in') return -1;
     if (a.status !== 'in' && b.status === 'in') return 1;
     return a.id.localeCompare(b.id);
@@ -637,11 +645,16 @@ function updateToolOptions(lid) {
     const o = document.createElement('option');
     o.value = t.id;
     const icon   = STATUS_ICONS[t.status] || '';
-    const suffix = t.status === 'out'    ? ' — checked out to ' + (t.checkedOutBy || '?') :
-                   t.status !== 'in'     ? ' — ' + (STATUS_LABELS[t.status] || t.status) : '';
+    const suffix = t.status === 'out'          ? ' — checked out to ' + (t.checkedOutBy || '?') :
+                   !CHECKOUT_ALLOWED.has(t.status) ? ' — ' + (STATUS_LABELS[t.status] || t.status) : '';
     o.textContent = icon + t.id + ' — ' + t.name + suffix;
     o.dataset.status = t.status;
     o.dataset.checkedOutBy = t.checkedOutBy || '';
+    // Disable options that can't be checked out
+    if (!CHECKOUT_ALLOWED.has(t.status)) {
+      o.disabled = true;
+      o.style.color = '#aaa';
+    }
     toolSel.appendChild(o);
   });
 }
@@ -661,10 +674,17 @@ async function submitCheckout() {
   }
   if (!valid || items.length === 0) { showToast('Please select a tool for each line, or remove empty lines.', 'error'); return; }
 
-  const conflicts = items.filter(i => i.status !== 'in');
-  if (conflicts.length > 0) {
-    const names = conflicts.map(i => i.toolId + ' (' + (STATUS_LABELS[i.status] || i.status) + (i.checkedOutBy ? ', held by ' + i.checkedOutBy : '') + ')').join('\n');
-    const go = confirm('The following tools are not currently available:\n\n' + names + '\n\nProceeding will override their current status. Continue?');
+  // Block any disabled-status tools (shouldn't reach here, but safety check)
+  const blocked = items.filter(i => !CHECKOUT_ALLOWED.has(i.status));
+  if (blocked.length > 0) {
+    showToast('Some selected tools are not available for checkout. Please remove them.', 'error');
+    return;
+  }
+  // Warn only for 'out' tools (transfer between employees)
+  const transfers = items.filter(i => i.status === 'out');
+  if (transfers.length > 0) {
+    const names = transfers.map(i => i.toolId + ' (currently held by ' + (i.checkedOutBy || '?') + ')').join('\n');
+    const go = confirm('The following tools are currently checked out to someone else:\n\n' + names + '\n\nThis will transfer them to ' + employee + '. Continue?');
     if (!go) return;
   }
 
@@ -775,8 +795,8 @@ async function lookupByEmployee() {
   try {
     const d = await api({ action: 'historyByEmployee', employee });
     let records = d.records || [];
-    if (filter === 'out')      records = records.filter(r => !r.checkedInAt);
-    if (filter === 'returned') records = records.filter(r =>  r.checkedInAt);
+    if (filter === 'out')      records = records.filter(r => r.currentlyOut);
+    if (filter === 'returned') records = records.filter(r => !r.currentlyOut);
     if (!records.length) { container.innerHTML = '<div class="empty-state">No records match the current filter.</div>'; return; }
     container.innerHTML = `
       <table class="results-table">
@@ -789,8 +809,8 @@ async function lookupByEmployee() {
             <td><span class="badge-id">${r.toolId}</span></td>
             <td>${r.toolName}</td><td>${r.category}</td>
             <td>${formatDate(r.checkedOutAt)}</td>
-            <td>${r.checkedInAt ? formatDate(r.checkedInAt) : '—'}</td>
-            <td>${r.checkedInAt ? '<span class="status-badge status-in">Returned</span>' : '<span class="status-badge status-out">Out</span>'}</td>
+            <td>${r.checkedInAt ? formatDate(r.checkedInAt) : r.currentlyOut ? '<em style="color:var(--text-muted);font-size:12px">' + getDuration(r.checkedOutAt).text + '</em>' : '—'}</td>
+            <td>${r.currentlyOut ? '<span class="status-badge status-out">Out</span>' : r.checkedInAt ? '<span class="status-badge status-in">Returned</span>' : '—'}</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -807,26 +827,41 @@ async function lookupByTool() {
   try {
     const d = await api({ action: 'historyByTool', query });
     const records = d.records || [];
-    if (!records.length) { container.innerHTML = '<div class="empty-state">No results for "' + query + '".</div>'; return; }
-    container.innerHTML = `
+    if (!records.length && !d.toolId) { container.innerHTML = '<div class="empty-state">No results for "' + query + '".</div>'; return; }
+
+    // Current status banner
+    const statusHtml = d.currentStatus ? `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1.5px solid var(--border-default);border-radius:8px;margin-bottom:14px">
+        <span class="badge-id">${d.toolId}</span>
+        <span style="font-weight:600">${d.toolName}</span>
+        <span style="flex:1"></span>
+        ${statusBadge(d.currentStatus)}
+        ${d.currentStatus === 'out' && d.currentCheckedOutBy
+          ? `<span style="font-size:13px;color:var(--text-muted)">checked out to <strong>${d.currentCheckedOutBy}</strong></span>`
+          : ''}
+      </div>` : '';
+
+    const historyHtml = records.length ? `
       <table class="results-table">
         <thead><tr>
-          <th>Tool ID</th><th>Name</th><th>Employee</th>
+          <th>Employee</th>
           <th>Checked Out</th><th>Duration / Returned</th><th>Status</th>
         </tr></thead>
         <tbody>
           ${records.map(r => {
             const dur = r.checkedInAt ? getDurationBetween(r.checkedOutAt, r.checkedInAt).text : getDuration(r.checkedOutAt).text;
             return `<tr>
-              <td><span class="badge-id">${r.toolId}</span></td>
-              <td>${r.toolName}</td><td>${r.employee}</td>
+              <td>${r.employee}</td>
               <td>${formatDate(r.checkedOutAt)}</td><td>${dur}</td>
               <td>${r.checkedInAt ? '<span class="status-badge status-in">Returned</span>' : '<span class="status-badge status-out">Out</span>'}</td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:9px;text-align:right">${records.length} record${records.length!==1?'s':''}</div>`;
+      <div style="font-size:12px;color:var(--text-muted);margin-top:9px;text-align:right">${records.length} checkout record${records.length!==1?'s':''}</div>`
+    : '<div class="empty-state">No checkout history found for this tool.</div>';
+
+    container.innerHTML = statusHtml + historyHtml;
   } catch(e) { container.innerHTML = '<div class="empty-state" style="color:var(--status-out-text)">Error: ' + e.message + '</div>'; }
 }
 </script>

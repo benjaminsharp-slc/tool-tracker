@@ -421,24 +421,39 @@ function historyByEmployee(params) {
   const records = logRows
     .filter(r => String(r['Employee']).trim() === employee && r['EventType'] === 'checkout')
     .map(r => {
-      const toolIdNorm  = normalizeId(r['ToolID']);
+      const toolIdNorm   = normalizeId(r['ToolID']);
       const checkedOutAt = r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '';
-      const key = toolIdNorm + '|' + checkedOutAt;
+      const key          = toolIdNorm + '|' + checkedOutAt;
+      const isCurrentlyOut = currentlyOut.has(toolIdNorm);
 
-      // Use Tools sheet as source of truth for currently-out status
-      let checkedInAt = currentlyOut.has(toolIdNorm) ? '' : (checkinMap[key] || '');
+      // For currently-out tools, checkedInAt must be blank regardless of log
+      // For returned tools, pull from checkin log join
+      const checkedInAt = isCurrentlyOut ? '' : (checkinMap[key] || '');
 
       return {
-        toolId:      toolIdNorm.padStart(3, '0'),
-        toolName:    r['ToolName'],
-        category:    r['Category'],
+        toolId:       toolIdNorm.padStart(3, '0'),
+        toolName:     r['ToolName'],
+        category:     r['Category'],
         checkedOutAt,
-        checkedInAt
+        checkedInAt,
+        currentlyOut: isCurrentlyOut   // explicit flag for frontend filtering
       };
     });
 
-  records.reverse();
-  return { records };
+  // Deduplicate currently-out tools: only keep the most recent checkout entry
+  // (a tool could appear multiple times if checked out, returned, checked out again)
+  const seenOut = new Set();
+  const deduped = [];
+  for (const r of records) {
+    if (r.currentlyOut) {
+      if (seenOut.has(r.toolId)) continue; // skip older entries for same tool
+      seenOut.add(r.toolId);
+    }
+    deduped.push(r);
+  }
+
+  deduped.reverse();
+  return { records: deduped };
 }
 
 // ── historyByTool ──────────────────────────────────────────────────────
@@ -446,24 +461,55 @@ function historyByTool(params) {
   const raw = String(params.query || '').trim();
   const queryNum = normalizeId(raw);
   const queryStr = raw.toLowerCase();
-  const sheet = getSheet(SHEET_LOG);
-  const rows = sheetToObjects(sheet);
 
-  const records = rows
+  // Get current status from Tools sheet
+  const toolSheet = getSheet(SHEET_TOOLS);
+  const toolRows  = sheetToObjects(toolSheet);
+  const toolMatch = toolRows.find(r =>
+    normalizeId(r['ToolID']) === queryNum ||
+    String(r['Name']).toLowerCase().includes(queryStr)
+  );
+  const currentStatus     = toolMatch ? String(toolMatch['Status'] || 'in').toLowerCase() : null;
+  const currentCheckedOut = toolMatch ? String(toolMatch['CheckedOutBy'] || '').trim() : '';
+
+  // Build checkin lookup keyed by toolId|checkedOutAt
+  const logSheet = getSheet(SHEET_LOG);
+  const logRows  = sheetToObjects(logSheet);
+
+  const checkinMap = {};
+  logRows
+    .filter(r => r['EventType'] === 'checkin' &&
+      (normalizeId(r['ToolID']) === queryNum ||
+       String(r['ToolName']).toLowerCase().includes(queryStr)))
+    .forEach(r => {
+      const key = normalizeId(r['ToolID']) + '|' + (r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '');
+      checkinMap[key] = r['CheckedInAt'] ? new Date(r['CheckedInAt']).toISOString() : '';
+    });
+
+  const records = logRows
     .filter(r => r['EventType'] === 'checkout' &&
       (normalizeId(r['ToolID']) === queryNum ||
        String(r['ToolName']).toLowerCase().includes(queryStr)))
-    .map(r => ({
-      toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
-      toolName:     r['ToolName'],
-      category:     r['Category'],
-      employee:     r['Employee'],
-      checkedOutAt: r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '',
-      checkedInAt:  r['CheckedInAt']  ? new Date(r['CheckedInAt']).toISOString()  : ''
-    }))
-    .reverse();
+    .map(r => {
+      const checkedOutAt = r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '';
+      const key = normalizeId(r['ToolID']) + '|' + checkedOutAt;
+      return {
+        toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
+        toolName:     r['ToolName'],
+        category:     r['Category'],
+        employee:     r['Employee'],
+        checkedOutAt,
+        checkedInAt:  checkinMap[key] || ''
+      };
+    });
 
-  return { records };
+  records.reverse();
+
+  // Attach current tool status to the response for the UI header
+  const status = toolMatch ? String(toolMatch['Status'] || 'in').toLowerCase() : null;
+  return { records, currentStatus: status, currentCheckedOutBy: currentCheckedOut,
+           toolName: toolMatch ? String(toolMatch['Name'] || '') : '',
+           toolId: toolMatch ? normalizeId(toolMatch['ToolID']).padStart(3, '0') : '' };
 }
 
 // ── fullHistory ────────────────────────────────────────────────────────
