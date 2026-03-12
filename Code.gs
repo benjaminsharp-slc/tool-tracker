@@ -462,54 +462,66 @@ function historyByTool(params) {
   const queryNum = normalizeId(raw);
   const queryStr = raw.toLowerCase();
 
-  // Get current status from Tools sheet
+  // Get ALL matching tools from Tools sheet (not just first match)
   const toolSheet = getSheet(SHEET_TOOLS);
   const toolRows  = sheetToObjects(toolSheet);
-  const toolMatch = toolRows.find(r =>
+  const matchingTools = toolRows.filter(r =>
     normalizeId(r['ToolID']) === queryNum ||
     String(r['Name']).toLowerCase().includes(queryStr)
   );
-  const currentStatus     = toolMatch ? String(toolMatch['Status'] || 'in').toLowerCase() : null;
-  const currentCheckedOut = toolMatch ? String(toolMatch['CheckedOutBy'] || '').trim() : '';
 
-  // Build checkin lookup keyed by toolId|checkedOutAt
+  if (!matchingTools.length) return { tools: [] };
+
+  // Build a set of matching numeric IDs for fast log filtering
+  const matchingIds = new Set(matchingTools.map(r => normalizeId(r['ToolID'])));
+
   const logSheet = getSheet(SHEET_LOG);
   const logRows  = sheetToObjects(logSheet);
 
+  // Build checkin/auto-checkin lookup keyed by toolIdNorm|checkedOutAt
   const checkinMap = {};
   logRows
-    .filter(r => r['EventType'] === 'checkin' &&
-      (normalizeId(r['ToolID']) === queryNum ||
-       String(r['ToolName']).toLowerCase().includes(queryStr)))
+    .filter(r => (r['EventType'] === 'checkin' || r['EventType'] === 'auto-checkin') &&
+                  matchingIds.has(normalizeId(r['ToolID'])))
     .forEach(r => {
       const key = normalizeId(r['ToolID']) + '|' + (r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '');
-      checkinMap[key] = r['CheckedInAt'] ? new Date(r['CheckedInAt']).toISOString() : '';
+      // Don't overwrite a real checkin with an auto-checkin
+      if (!checkinMap[key] || r['EventType'] === 'checkin') {
+        checkinMap[key] = r['CheckedInAt'] ? new Date(r['CheckedInAt']).toISOString() : '';
+      }
     });
 
-  const records = logRows
-    .filter(r => r['EventType'] === 'checkout' &&
-      (normalizeId(r['ToolID']) === queryNum ||
-       String(r['ToolName']).toLowerCase().includes(queryStr)))
-    .map(r => {
+  // Group checkout log entries by tool ID
+  const recordsByTool = {};
+  logRows
+    .filter(r => r['EventType'] === 'checkout' && matchingIds.has(normalizeId(r['ToolID'])))
+    .forEach(r => {
+      const idNorm = normalizeId(r['ToolID']);
       const checkedOutAt = r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : '';
-      const key = normalizeId(r['ToolID']) + '|' + checkedOutAt;
-      return {
-        toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
-        toolName:     r['ToolName'],
-        category:     r['Category'],
+      const key = idNorm + '|' + checkedOutAt;
+      if (!recordsByTool[idNorm]) recordsByTool[idNorm] = [];
+      recordsByTool[idNorm].push({
         employee:     r['Employee'],
         checkedOutAt,
         checkedInAt:  checkinMap[key] || ''
-      };
+      });
     });
 
-  records.reverse();
+  // Build per-tool result objects
+  const tools = matchingTools.map(t => {
+    const idNorm = normalizeId(t['ToolID']);
+    const records = (recordsByTool[idNorm] || []).reverse();
+    return {
+      toolId:           idNorm.padStart(3, '0'),
+      toolName:         String(t['Name']         || ''),
+      category:         String(t['Category']     || ''),
+      currentStatus:    String(t['Status']       || 'in').toLowerCase(),
+      currentCheckedOutBy: String(t['CheckedOutBy'] || '').trim(),
+      records
+    };
+  });
 
-  // Attach current tool status to the response for the UI header
-  const status = toolMatch ? String(toolMatch['Status'] || 'in').toLowerCase() : null;
-  return { records, currentStatus: status, currentCheckedOutBy: currentCheckedOut,
-           toolName: toolMatch ? String(toolMatch['Name'] || '') : '',
-           toolId: toolMatch ? normalizeId(toolMatch['ToolID']).padStart(3, '0') : '' };
+  return { tools };
 }
 
 // ── fullHistory ────────────────────────────────────────────────────────
