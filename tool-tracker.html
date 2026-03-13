@@ -622,11 +622,7 @@ function buildFlatList() {
   Object.entries(toolsByCategory).forEach(([cat, tools]) => {
     tools.forEach(t => allToolsFlat.push({ ...t, category: cat }));
   });
-  allToolsFlat.sort((a, b) => {
-    if (a.status === 'in' && b.status !== 'in') return -1;
-    if (a.status !== 'in' && b.status === 'in') return 1;
-    return a.name.localeCompare(b.name);
-  });
+  allToolsFlat.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function filterTools(query) {
