@@ -619,11 +619,13 @@ const CHECKOUT_ALLOWED = new Set(['in', 'out']);
 let allToolsFlat = [];
 function buildFlatList() {
   allToolsFlat = [];
-  Object.values(toolsByCategory).forEach(tools => allToolsFlat.push(...tools));
+  Object.entries(toolsByCategory).forEach(([cat, tools]) => {
+    tools.forEach(t => allToolsFlat.push({ ...t, category: cat }));
+  });
   allToolsFlat.sort((a, b) => {
     if (a.status === 'in' && b.status !== 'in') return -1;
     if (a.status !== 'in' && b.status === 'in') return 1;
-    return a.id.localeCompare(b.id);
+    return a.name.localeCompare(b.name);
   });
 }
 
