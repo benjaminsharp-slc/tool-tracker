@@ -280,11 +280,43 @@
 
   /* ── Check-out tool lines ── */
   .tool-line {
-    display: grid; grid-template-columns: 1fr 1fr auto;
-    gap: 10px; align-items: end;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 10px; align-items: start;
     margin-bottom: 10px; padding: 11px;
     background: #F9FAFB; border: 1.5px solid var(--border-default); border-radius: 7px;
   }
+  .tool-search-wrap { position: relative; }
+  .tool-search-input {
+    width: 100%; box-sizing: border-box;
+    padding: 9px 11px; border: 1.5px solid var(--border-default);
+    border-radius: 7px; font-family: 'Barlow', sans-serif; font-size: 14px;
+    background: white; color: var(--text-primary);
+    transition: border-color 0.15s;
+  }
+  .tool-search-input:focus { outline: none; border-color: var(--brand-primary); }
+  .tool-search-input.locked { background: #F0F4FA; color: var(--text-primary); font-weight: 600; cursor: default; }
+  .tool-dropdown {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 100;
+    background: white; border: 1.5px solid var(--brand-primary);
+    border-radius: 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    max-height: 220px; overflow-y: auto;
+    display: none;
+  }
+  .tool-dropdown.open { display: block; }
+  .tool-dropdown-item {
+    padding: 9px 12px; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .tool-dropdown-item:last-child { border-bottom: none; }
+  .tool-dropdown-item:hover, .tool-dropdown-item.focused { background: #EEF3FA; }
+  .tool-dropdown-item.disabled { opacity: 0.45; cursor: not-allowed; }
+  .tool-dropdown-item.in-queue { opacity: 0.6; cursor: not-allowed; background: #F0F4FA; }
+  .tool-dropdown-item .item-id { font-weight: 700; font-size: 12px; color: var(--brand-primary); min-width: 36px; }
+  .tool-dropdown-item .item-name { flex: 1; }
+  .tool-dropdown-item .item-status { font-size: 11px; font-weight: 600; }
+  .tool-dropdown-empty { padding: 10px 12px; font-size: 13px; color: var(--text-muted); }
+  .tool-line-locked-info { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
   .btn-remove {
     width: 34px; height: 34px;
     border: 1.5px solid var(--border-default);
@@ -564,6 +596,7 @@ async function loadCategories() {
     const d = await api({ action: 'getCategories' });
     categories = d.categories || [];
     toolsByCategory = d.toolsByCategory || {};
+    buildFlatList();
   } catch(e) { categories = []; }
 }
 
@@ -579,77 +612,172 @@ function populateSelect(id, withPrompt = false) {
 }
 
 // ── Check Out ─────────────────────────────────────────
+// Statuses that can be selected for checkout
+const CHECKOUT_ALLOWED = new Set(['in', 'out']);
+
+// Flat list of all tools for typeahead — built from toolsByCategory after load
+let allToolsFlat = [];
+function buildFlatList() {
+  allToolsFlat = [];
+  Object.values(toolsByCategory).forEach(tools => allToolsFlat.push(...tools));
+  allToolsFlat.sort((a, b) => {
+    if (a.status === 'in' && b.status !== 'in') return -1;
+    if (a.status !== 'in' && b.status === 'in') return 1;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function filterTools(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return allToolsFlat.slice(0, 40);
+  return allToolsFlat.filter(t =>
+    t.id.includes(q) ||
+    t.name.toLowerCase().includes(q) ||
+    t.category.toLowerCase().includes(q)
+  ).slice(0, 40);
+}
+
+// Returns set of tool IDs already locked in other lines
+function getSelectedIds(excludeLid) {
+  const ids = new Set();
+  document.querySelectorAll('.tool-line').forEach(line => {
+    if (line.id === excludeLid) return;
+    const inp = document.getElementById(line.id + '-search');
+    if (inp && inp.dataset.selectedId) ids.add(inp.dataset.selectedId);
+  });
+  return ids;
+}
+
+function renderDropdown(lid, query) {
+  const dropdown = document.getElementById(lid + '-dropdown');
+  const results = filterTools(query);
+  const alreadySelected = getSelectedIds(lid);
+  if (!results.length) {
+    dropdown.innerHTML = '<div class="tool-dropdown-empty">No tools match "' + query + '"</div>';
+    dropdown.classList.add('open');
+    return;
+  }
+  dropdown.innerHTML = results.map((t, i) => {
+    const allowed = CHECKOUT_ALLOWED.has(t.status);
+    const inQueue = alreadySelected.has(t.id);
+    const statusColor = t.status === 'out' ? 'var(--status-out-text)' :
+                        t.status === 'in'  ? 'var(--status-available-text)' : 'var(--text-muted)';
+    const statusLabel = inQueue                      ? '✓ in your list' :
+                        t.status === 'out'           ? '🔴 out — ' + (t.checkedOutBy || '?') :
+                        t.status === 'in'            ? '' :
+                        (STATUS_LABELS[t.status] || t.status);
+    const labelColor  = inQueue ? 'var(--brand-primary)' : statusColor;
+    return `<div class="tool-dropdown-item${allowed && !inQueue ? '' : inQueue ? ' in-queue' : ' disabled'}" 
+      data-idx="${i}" data-lid="${lid}"
+      data-id="${t.id}" data-name="${t.name}" data-status="${t.status}" 
+      data-checkedoutby="${t.checkedOutBy || ''}"
+      onmousedown="selectTool(event, '${lid}')">
+      <span class="item-id">${t.id}</span>
+      <span class="item-name">${t.name}<br><span style="font-size:11px;color:var(--text-muted)">${t.category}</span></span>
+      ${statusLabel ? `<span class="item-status" style="color:${labelColor}">${statusLabel}</span>` : ''}
+    </div>`;
+  }).join('');
+  dropdown.classList.add('open');
+}
+
+function selectTool(e, lid) {
+  const item = e.currentTarget;
+  if (item.classList.contains('disabled')) { e.preventDefault(); return; }
+  const input = document.getElementById(lid + '-search');
+  const dropdown = document.getElementById(lid + '-dropdown');
+  const info = document.getElementById(lid + '-info');
+  input.value = item.dataset.id + ' — ' + item.dataset.name;
+  input.dataset.selectedId = item.dataset.id;
+  input.dataset.selectedName = item.dataset.name;
+  input.dataset.selectedStatus = item.dataset.status;
+  input.dataset.selectedCheckedOutBy = item.dataset.checkedoutby;
+  input.classList.add('locked');
+  input.readOnly = true;
+  info.textContent = item.dataset.status === 'out'
+    ? 'Currently checked out to ' + (item.dataset.checkedoutby || '?') + '. Proceeding will transfer the tool.'
+    : '';
+  dropdown.classList.remove('open');
+  refreshOpenDropdowns(lid);
+}
+
+function unlockLine(lid) {
+  const input = document.getElementById(lid + '-search');
+  const info = document.getElementById(lid + '-info');
+  input.value = '';
+  input.dataset.selectedId = '';
+  input.classList.remove('locked');
+  input.readOnly = false;
+  info.textContent = '';
+  input.focus();
+  refreshOpenDropdowns(lid);
+}
+
+// Refresh any open dropdowns in other lines so in-queue flags update live
+function refreshOpenDropdowns(changedLid) {
+  document.querySelectorAll('.tool-line').forEach(line => {
+    if (line.id === changedLid) return;
+    const dd = document.getElementById(line.id + '-dropdown');
+    const inp = document.getElementById(line.id + '-search');
+    if (dd && dd.classList.contains('open') && inp) {
+      renderDropdown(line.id, inp.value);
+    }
+  });
+}
+
 function addToolLine() {
   lineCount++;
   const lid = 'line-' + lineCount;
   const div = document.createElement('div');
   div.className = 'tool-line'; div.id = lid;
 
-  const catWrap = document.createElement('div'); catWrap.className = 'field';
-  const catLabel = document.createElement('label'); catLabel.textContent = 'Category';
-  const catSel = document.createElement('select'); catSel.id = lid + '-cat';
-  catSel.innerHTML = '<option value="">— Category —</option>';
-  categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
-  catSel.onchange = () => updateToolOptions(lid);
-  catWrap.appendChild(catLabel); catWrap.appendChild(catSel);
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'field tool-search-wrap';
 
-  const toolWrap = document.createElement('div'); toolWrap.className = 'field';
-  const toolLabel = document.createElement('label'); toolLabel.textContent = 'Tool (ID — Name)';
-  const toolSel = document.createElement('select'); toolSel.id = lid + '-tool';
-  toolSel.innerHTML = '<option value="">— Select category first —</option>';
-  toolWrap.appendChild(toolLabel); toolWrap.appendChild(toolSel);
+  const label = document.createElement('label');
+  label.textContent = 'Tool — enter ID, name, or brand';
+
+  const input = document.createElement('input');
+  input.type = 'text'; input.id = lid + '-search';
+  input.className = 'tool-search-input';
+  input.placeholder = 'e.g. 007, DeWalt, drill…';
+  input.autocomplete = 'off';
+  input.dataset.selectedId = '';
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'tool-dropdown'; dropdown.id = lid + '-dropdown';
+
+  const info = document.createElement('div');
+  info.className = 'tool-line-locked-info'; info.id = lid + '-info';
+
+  input.oninput = () => {
+    if (input.readOnly) return;
+    renderDropdown(lid, input.value);
+  };
+  input.onfocus = () => {
+    if (!input.readOnly) renderDropdown(lid, input.value);
+  };
+  input.onblur = () => {
+    setTimeout(() => dropdown.classList.remove('open'), 150);
+  };
+  input.onclick = () => {
+    if (input.readOnly) unlockLine(lid);
+  };
+  input.onkeydown = (e) => {
+    if (e.key === 'Escape') { dropdown.classList.remove('open'); input.blur(); }
+  };
 
   const removeBtn = document.createElement('button');
   removeBtn.className = 'btn-remove'; removeBtn.innerHTML = '×'; removeBtn.title = 'Remove';
   removeBtn.onclick = () => div.remove();
 
-  div.appendChild(catWrap); div.appendChild(toolWrap); div.appendChild(removeBtn);
+  searchWrap.appendChild(label);
+  searchWrap.appendChild(input);
+  searchWrap.appendChild(dropdown);
+  searchWrap.appendChild(info);
+  div.appendChild(searchWrap);
+  div.appendChild(removeBtn);
   document.getElementById('co-lines').appendChild(div);
-}
-
-const STATUS_ICONS = {
-  in:      '',
-  out:     '🔴 ',
-  repair:  '🔧 ',
-  replace: '⚠️ ',
-};
-
-// Statuses that can be selected for checkout
-// repair/replace/lost/retired are not selectable — tool isn't available
-const CHECKOUT_ALLOWED = new Set(['in', 'out']);
-
-function updateToolOptions(lid) {
-  const cat = document.getElementById(lid + '-cat').value;
-  const toolSel = document.getElementById(lid + '-tool');
-  toolSel.innerHTML = '<option value="">— Select tool —</option>';
-
-  // Sort: available (in) first, then checked out, then disabled
-  const tools = [...(toolsByCategory[cat] || [])].sort((a, b) => {
-    const aOk = CHECKOUT_ALLOWED.has(a.status);
-    const bOk = CHECKOUT_ALLOWED.has(b.status);
-    if (aOk && !bOk) return -1;
-    if (!aOk && bOk) return 1;
-    if (a.status === 'in' && b.status !== 'in') return -1;
-    if (a.status !== 'in' && b.status === 'in') return 1;
-    return a.id.localeCompare(b.id);
-  });
-
-  tools.forEach(t => {
-    const o = document.createElement('option');
-    o.value = t.id;
-    const icon   = STATUS_ICONS[t.status] || '';
-    const suffix = t.status === 'out'          ? ' — checked out to ' + (t.checkedOutBy || '?') :
-                   !CHECKOUT_ALLOWED.has(t.status) ? ' — ' + (STATUS_LABELS[t.status] || t.status) : '';
-    o.textContent = icon + t.id + ' — ' + t.name + suffix;
-    o.dataset.status = t.status;
-    o.dataset.checkedOutBy = t.checkedOutBy || '';
-    // Disable options that can't be checked out
-    if (!CHECKOUT_ALLOWED.has(t.status)) {
-      o.disabled = true;
-      o.style.color = '#aaa';
-    }
-    toolSel.appendChild(o);
-  });
+  input.focus();
 }
 
 async function submitCheckout() {
@@ -659,11 +787,10 @@ async function submitCheckout() {
   const lines = document.querySelectorAll('.tool-line');
   const items = []; let valid = true;
   for (const line of lines) {
-    const toolSel = document.getElementById(line.id + '-tool');
-    const val = toolSel.value;
+    const input = document.getElementById(line.id + '-search');
+    const val = input ? input.dataset.selectedId : '';
     if (!val) { valid = false; break; }
-    const opt = toolSel.options[toolSel.selectedIndex];
-    items.push({ toolId: val, toolName: opt.textContent, status: opt.dataset.status, checkedOutBy: opt.dataset.checkedOutBy });
+    items.push({ toolId: val, toolName: input.dataset.selectedName, status: input.dataset.selectedStatus, checkedOutBy: input.dataset.selectedCheckedOutBy });
   }
   if (!valid || items.length === 0) { showToast('Please select a tool for each line, or remove empty lines.', 'error'); return; }
 
