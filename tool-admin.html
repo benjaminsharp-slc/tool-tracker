@@ -424,8 +424,8 @@
           <div class="field-hint" id="id-hint">Auto-assigned. Cannot be edited.</div>
         </div>
         <div class="field">
-          <label>Category</label>
-          <select id="add-category"><option value="">Loading…</option></select>
+          <label>Home Location</label>
+          <select id="add-location"><option value="">Loading…</option></select>
         </div>
         <div class="field">
           <label>Tool Name</label>
@@ -438,7 +438,7 @@
     <div class="card" id="queue-card" style="display:none">
       <div class="card-title">Tools to Add <span class="count-pill" id="queue-count">0</span></div>
       <table class="results-table" id="queue-table">
-        <thead><tr><th>Tool ID</th><th>Name</th><th>Category</th><th></th></tr></thead>
+        <thead><tr><th>Tool ID</th><th>Name</th><th>Home Location</th><th></th></tr></thead>
         <tbody id="queue-body"></tbody>
       </table>
       <div style="margin-top:13px">
@@ -453,7 +453,7 @@
     <div class="card">
       <div class="toolbar">
         <div class="field">
-          <label>Category</label>
+          <label>Home Location</label>
           <select id="list-cat" onchange="renderList()"><option value="">All</option></select>
         </div>
         <div class="field">
@@ -550,7 +550,7 @@ async function api(params) {
 }
 
 
-let categories = [], allTools = [], queue = [];
+let locations = [], allTools = [], queue = [];
 let sortCol = 'id', sortAsc = true;
 let modalToolId = null, selectedStatus = null;
 
@@ -581,19 +581,19 @@ function showPage(name, btn) {
 
 async function loadCategories() {
   try {
-    const d = await api({ action: 'getCategoriesOnly' });
-    categories = d.categories || [];
-    const addSel = document.getElementById('add-category');
-    addSel.innerHTML = '<option value="">— Select category —</option>';
-    categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; addSel.appendChild(o); });
+    const d = await api({ action: 'getLocations' });
+    locations = d.locations || [];
+    const addSel = document.getElementById('add-location');
+    addSel.innerHTML = '<option value="">— Select location —</option>';
+    locations.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; addSel.appendChild(o); });
     const listSel = document.getElementById('list-cat');
     listSel.innerHTML = '<option value="">All</option>';
-    categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; listSel.appendChild(o); });
+    locations.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; listSel.appendChild(o); });
   } catch(e) {
-    const addSel = document.getElementById('add-category');
+    const addSel = document.getElementById('add-location');
     if (addSel) addSel.innerHTML = '<option value="">⚠ Error loading — check URL</option>';
     console.error('loadCategories failed:', e);
-    showToast('Could not load categories: ' + e.message, 'error');
+    showToast('Could not load locations: ' + e.message, 'error');
   }
 }
 
@@ -629,9 +629,9 @@ function refreshIdDisplay() {
 }
 
 async function submitAddTool() {
-  const category = document.getElementById('add-category').value;
+  const location = document.getElementById('add-location').value;
   const name     = document.getElementById('add-name').value.trim();
-  if (!category || !name) { showToast('Please fill in category and name.', 'error'); return; }
+  if (!location || !name) { showToast('Please fill in location and name.', 'error'); return; }
 
   const toolId = calcNextId();
 
@@ -650,7 +650,7 @@ async function submitAddTool() {
     }
   } catch(e) { showToast('Could not verify ID: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Add to Queue'; return; }
 
-  queue.push({ id: toolId, name, category });
+  queue.push({ id: toolId, name, homeLocation: location });
   renderQueue();
   document.getElementById('add-name').value = '';
   refreshIdDisplay();
@@ -666,7 +666,7 @@ function renderQueue() {
   document.getElementById('queue-body').innerHTML = queue.map((t, i) => `
     <tr>
       <td><span class="badge-id">${t.id}</span></td>
-      <td>${t.name}</td><td>${t.category}</td>
+      <td>${t.name}</td><td>${t.homeLocation}</td>
       <td><button class="btn-status" onclick="queue.splice(${i},1);renderQueue()">✕</button></td>
     </tr>`).join('');
 }
@@ -704,7 +704,7 @@ function renderList() {
   const search  = document.getElementById('list-search').value.toLowerCase().trim();
 
   let filtered = allTools.filter(t => {
-    if (catF    && t.category !== catF) return false;
+    if (catF    && t.homeLocation !== catF) return false;
     if (statusF && t.status   !== statusF) return false;
     if (search  && !t.id.toLowerCase().includes(search) && !t.name.toLowerCase().includes(search)) return false;
     return true;
@@ -725,7 +725,7 @@ function renderList() {
       <thead><tr>
         <th class="${sortCol==='id'?'sorted':''}"       onclick="setSort('id')">Tool ID ${arrow('id')}</th>
         <th class="${sortCol==='name'?'sorted':''}"     onclick="setSort('name')">Name ${arrow('name')}</th>
-        <th class="${sortCol==='category'?'sorted':''}" onclick="setSort('category')">Category ${arrow('category')}</th>
+        <th class="${sortCol==='homeLocation'?'sorted':''}" onclick="setSort('homeLocation')">Home Location ${arrow('homeLocation')}</th>
         <th class="${sortCol==='status'?'sorted':''}"   onclick="setSort('status')">Status ${arrow('status')}</th>
         <th class="col-checkedout">Checked Out To</th>
         <th class="col-condition">Last Condition</th>
@@ -736,7 +736,7 @@ function renderList() {
         ${filtered.map(t => `<tr>
           <td><span class="badge-id">${t.id}</span></td>
           <td>${t.name}</td>
-          <td>${t.category}</td>
+          <td>${t.homeLocation}</td>
           <td>${statusBadge(t.status)}</td>
           <td class="col-checkedout">${t.checkedOutBy || '—'}</td>
           <td class="col-condition">${t.condition || '—'}</td>

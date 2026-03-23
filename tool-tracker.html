@@ -565,7 +565,7 @@ async function api(params) {
 }
 
 
-let employees = [], categories = [], toolsByCategory = {};
+let employees = [], locations = [], toolsByCategory = {};
 let lineCount = 0;
 
 window.onload = async () => {
@@ -594,10 +594,10 @@ async function loadEmployees() {
 async function loadCategories() {
   try {
     const d = await api({ action: 'getCategories' });
-    categories = d.categories || [];
+    locations = d.locations || [];
     toolsByCategory = d.toolsByCategory || {};
     buildFlatList();
-  } catch(e) { categories = []; }
+  } catch(e) { locations = []; }
 }
 
 function populateSelect(id, withPrompt = false) {
@@ -631,7 +631,7 @@ function filterTools(query) {
   return allToolsFlat.filter(t =>
     t.id.includes(q) ||
     t.name.toLowerCase().includes(q) ||
-    t.category.toLowerCase().includes(q)
+    t.homeLocation.toLowerCase().includes(q)
   ).slice(0, 40);
 }
 
@@ -671,7 +671,7 @@ function renderDropdown(lid, query) {
       data-checkedoutby="${t.checkedOutBy || ''}"
       onmousedown="selectTool(event, '${lid}')">
       <span class="item-id">${t.id}</span>
-      <span class="item-name">${t.name}<br><span style="font-size:11px;color:var(--text-muted)">${t.category}</span></span>
+      <span class="item-name">${t.name}<br><span style="font-size:11px;color:var(--text-muted)">${t.homeLocation}</span></span>
       ${statusLabel ? `<span class="item-status" style="color:${labelColor}">${statusLabel}</span>` : ''}
     </div>`;
   }).join('');
@@ -835,7 +835,7 @@ async function loadEmployeeCheckouts() {
       const t = {
         toolId:       rawT.toolId       || rawT.ToolID        || rawT['Tool ID']   || '',
         toolName:     rawT.toolName     || rawT.ToolName      || rawT['Tool Name'] || '',
-        category:     rawT.category     || rawT.Category      || '',
+        homeLocation: rawT.homeLocation  || rawT['Home Location'] || '',
         checkedOutAt: rawT.checkedOutAt || rawT.CheckedOutAt  || '',
       };
       const sid = String(t.toolId).replace(/[^a-zA-Z0-9_]/g, '_');
@@ -847,7 +847,7 @@ async function loadEmployeeCheckouts() {
         <div class="checkin-card-top">
           <div>
             <div class="tool-info"><span class="badge-id">${t.toolId}</span> ${t.toolName}</div>
-            <div class="tool-meta">Category: ${t.category} &nbsp;·&nbsp; <span class="duration ${dur.long ? 'long' : ''}">Out: ${dur.text}</span></div>
+            <div class="tool-meta">Return to: ${t.homeLocation} &nbsp;·&nbsp; <span class="duration ${dur.long ? 'long' : ''}">Out: ${dur.text}</span></div>
           </div>
           <div class="checkin-actions">
             <button class="btn-report" id="rpt-${sid}" onclick="toggleCondition('${sid}')">⚠ Issue</button>
@@ -919,13 +919,13 @@ async function lookupByEmployee() {
     container.innerHTML = `
       <table class="results-table">
         <thead><tr>
-          <th>Tool ID</th><th>Name</th><th>Category</th>
+          <th>Tool ID</th><th>Name</th><th>Home Location</th>
           <th>Checked Out</th><th>Time Out</th>
         </tr></thead>
         <tbody>
           ${records.map(r => `<tr>
             <td><span class="badge-id">${r.toolId}</span></td>
-            <td>${r.toolName}</td><td>${r.category}</td>
+            <td>${r.toolName}</td><td>${r.homeLocation}</td>
             <td>${formatDate(r.checkedOutAt)}</td>
             <td><span class="duration ${getDuration(r.checkedOutAt).cls}">${getDuration(r.checkedOutAt).text}</span></td>
           </tr>`).join('')}
@@ -951,7 +951,7 @@ async function lookupByTool() {
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1.5px solid var(--border-default);border-radius:8px;margin-bottom:10px">
           <span class="badge-id">${tool.toolId}</span>
           <span style="font-weight:600">${tool.toolName}</span>
-          <span style="font-size:12px;color:var(--text-muted)">${tool.category}</span>
+          <span style="font-size:12px;color:var(--text-muted)">${tool.homeLocation}</span>
           <span style="flex:1"></span>
           ${statusBadge(tool.currentStatus)}
           ${tool.currentStatus === 'out' && tool.currentCheckedOutBy

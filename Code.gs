@@ -6,7 +6,7 @@
 
 // ── Sheet names (must match tabs in your spreadsheet exactly) ────────
 const SHEET_EMPLOYEES  = 'Employees';
-const SHEET_CATEGORIES = 'Categories';
+const SHEET_LOCATIONS  = 'Locations';
 const SHEET_TOOLS      = 'Tools';
 const SHEET_LOG        = 'CheckoutLog';
 
@@ -27,7 +27,7 @@ function doGet(e) {
     switch (action) {
       case 'getEmployees':       result = getEmployees();                  break;
       case 'getCategories':      result = getCategories();                 break;
-      case 'getCategoriesOnly':  result = getCategoriesOnly();             break;
+      case 'getLocations':       result = getLocations();                  break;
       case 'getAllTools':        result = getAllTools();                    break;
       case 'checkToolId':        result = checkToolId(e.parameter);        break;
       case 'addTools':           result = addTools(e.parameter);           break;
@@ -95,24 +95,26 @@ function getEmployees() {
   return { employees };
 }
 
-// ── getCategoriesOnly ─────────────────────────────────────────────────
-// Reads from the Categories tab (used by admin page)
-function getCategoriesOnly() {
+// ── getLocations ──────────────────────────────────────────────────────
+// Reads from the Locations tab (used by admin page)
+function getLocations() {
   try {
-    const sheet = getSheet(SHEET_CATEGORIES);
+    const sheet = getSheet(SHEET_LOCATIONS);
     const data = sheet.getDataRange().getValues();
-    const cats = data.slice(1)
+    const locs = data.slice(1)
       .map(r => String(r[0]).trim())
       .filter(Boolean);
-    return { categories: cats };
+    return { locations: locs };
   } catch(e) {
-    // Fall back to deriving from Tools tab if Categories tab is missing
-    const derived = getCategories();
-    return { categories: derived.categories };
+    // Fall back to deriving unique locations from Tools tab
+    const sheet = getSheet(SHEET_TOOLS);
+    const rows  = sheetToObjects(sheet);
+    const locs  = [...new Set(rows.map(r => String(r['Home Location'] || '').trim()).filter(Boolean))].sort();
+    return { locations: locs };
   }
 }
 
-// ── getCategories + tools ──────────────────────────────────────────────
+// ── getToolsForCheckout ───────────────────────────────────────────────
 // Returns ALL tools with status info for the checkout page
 // All statuses included so the UI can show visual indicators
 function getCategories() {
@@ -123,7 +125,7 @@ function getCategories() {
   const toolsByCategory = {};
 
   rows.forEach(r => {
-    const cat    = String(r['Category'] || '').trim();
+    const cat    = String(r['Home Location'] || '').trim();
     const rawId  = String(r['ToolID']   || '').trim();
     const name   = String(r['Name']     || '').trim();
     if (!cat || !rawId) return;
@@ -140,12 +142,13 @@ function getCategories() {
       id,
       name,
       status,
+      homeLocation: cat,
       checkedOutBy: String(r['CheckedOutBy'] || '').trim()
     });
   });
 
   return {
-    categories: [...catSet].sort(),
+    locations: [...catSet].sort(),
     toolsByCategory
   };
 }
@@ -161,7 +164,7 @@ function getAllTools() {
     .map(r => ({
       id:           (n => !isNaN(n) ? String(n).padStart(3,'0') : raw)(parseInt((String(r['ToolID']||'').trim()).replace(/\D/g,''),10)),
       name:         String(r['Name']           || '').trim(),
-      category:     String(r['Category']       || '').trim(),
+      homeLocation: String(r['Home Location']   || '').trim(),
       status:       String(r['Status']         || 'in').toLowerCase(),
       checkedOutBy: String(r['CheckedOutBy']   || '').trim(),
       condition:    String(r['Condition']      || '').trim(),
@@ -186,28 +189,28 @@ function checkToolId(params) {
     if (!isNaN(toolIdNum) && !isNaN(existingNum)) return toolIdNum === existingNum;
     return existing.toUpperCase() === toolId.toUpperCase();
   });
-  if (match) return { exists: true, name: match['Name'], category: match['Category'] };
+  if (match) return { exists: true, name: match['Name'], homeLocation: match['Home Location'] };
   return { exists: false };
 }
 
 // ── addTools ──────────────────────────────────────────────────────────
 // Appends new tool rows to the Tools tab
 function addTools(params) {
-  const tools = JSON.parse(params.tools); // [{ id, name, category }]
+  const tools = JSON.parse(params.tools); // [{ id, name, homeLocation }]
   const sheet = getSheet(SHEET_TOOLS);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
   const colIdx  = name => headers.indexOf(name);
   const idCol     = colIdx('ToolID');
   const nameCol   = colIdx('Name');
-  const catCol    = colIdx('Category');
+  const catCol    = colIdx('Home Location');
   const statusCol = colIdx('Status');
 
   tools.forEach(t => {
     const row = new Array(headers.length).fill('');
     row[idCol]     = t.id; // stored as string; cell formatted as text below
     row[nameCol]   = t.name;
-    row[catCol]    = t.category;
+    row[catCol]    = t.homeLocation;
     row[statusCol] = 'in';
     const newRow = sheet.getLastRow() + 1;
     sheet.appendRow(row);
@@ -271,7 +274,7 @@ function checkout(params) {
   const checkedOutByCol = colIdx('CheckedOutBy');
   const checkedOutAtCol = colIdx('CheckedOutAt');
   const nameCol         = colIdx('Name');
-  const categoryCol     = colIdx('Category');
+  const locationCol     = colIdx('Home Location');
 
   toolIds.forEach(toolId => {
     for (let i = 1; i < toolData.length; i++) {
@@ -282,7 +285,7 @@ function checkout(params) {
         if (toolData[i][statusCol] === 'out' && prevHolder) {
           logRow(logSheet, [
             new Date(timestamp), toolId,
-            toolData[i][nameCol], toolData[i][categoryCol],
+            toolData[i][nameCol], toolData[i][locationCol],
             prevHolder,
             prevTime ? new Date(prevTime) : '',
             new Date(timestamp),
@@ -297,7 +300,7 @@ function checkout(params) {
 
         logRow(logSheet, [
           new Date(timestamp), toolId,
-          toolData[i][nameCol], toolData[i][categoryCol],
+          toolData[i][nameCol], toolData[i][locationCol],
           employee, new Date(timestamp), '',
           'checkout', '', ''
         ]);
@@ -329,7 +332,7 @@ function checkin(params) {
   const checkedOutByCol = colIdx('CheckedOutBy');
   const checkedOutAtCol = colIdx('CheckedOutAt');
   const nameCol         = colIdx('Name');
-  const categoryCol     = colIdx('Category');
+  const locationCol     = colIdx('Home Location');
   const conditionCol    = colIdx('Condition');
   const condNotesCol    = colIdx('ConditionNotes');
 
@@ -347,7 +350,7 @@ function checkin(params) {
 
       logRow(logSheet, [
         new Date(timestamp), toolId,
-        toolData[i][nameCol], toolData[i][categoryCol],
+        toolData[i][nameCol], toolData[i][locationCol],
         employee,
         checkoutTime ? new Date(checkoutTime) : '',
         new Date(timestamp),
@@ -380,7 +383,7 @@ function getCheckedOutTools(params) {
     .map(r => ({
       toolId:       normalizeId(r['ToolID']).padStart(3, '0'),
       toolName:     r['Name'],
-      category:     r['Category'],
+      homeLocation: r['Home Location'],
       checkedOutAt: r['CheckedOutAt'] ? new Date(r['CheckedOutAt']).toISOString() : ''
     }));
 
@@ -433,7 +436,7 @@ function historyByEmployee(params) {
       return {
         toolId:       toolIdNorm.padStart(3, '0'),
         toolName:     r['ToolName'],
-        category:     r['Category'],
+        homeLocation: r['Home Location'],
         checkedOutAt,
         checkedInAt,
         currentlyOut: isCurrentlyOut   // explicit flag for frontend filtering
@@ -514,7 +517,7 @@ function historyByTool(params) {
     return {
       toolId:           idNorm.padStart(3, '0'),
       toolName:         String(t['Name']         || ''),
-      category:         String(t['Category']     || ''),
+      homeLocation:     String(t['Home Location'] || ''),
       currentStatus:    String(t['Status']       || 'in').toLowerCase(),
       currentCheckedOutBy: String(t['CheckedOutBy'] || '').trim(),
       records
