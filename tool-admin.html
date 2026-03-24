@@ -432,18 +432,7 @@
           <input type="text" id="add-name" placeholder="e.g. DeWalt 20V Drill">
         </div>
       </div>
-      <button class="btn-primary" id="add-submit" onclick="submitAddTool()">Add to Queue</button>
-    </div>
-
-    <div class="card" id="queue-card" style="display:none">
-      <div class="card-title">Tools to Add <span class="count-pill" id="queue-count">0</span></div>
-      <table class="results-table" id="queue-table">
-        <thead><tr><th>Tool ID</th><th>Name</th><th>Home Location</th><th></th></tr></thead>
-        <tbody id="queue-body"></tbody>
-      </table>
-      <div style="margin-top:13px">
-        <button class="btn-primary" id="commit-btn" onclick="commitQueue()">Save All to Spreadsheet</button>
-      </div>
+      <button class="btn-primary" id="add-submit" onclick="submitAddTool()">Add Tool</button>
     </div>
   </div>
 
@@ -550,7 +539,7 @@ async function api(params) {
 }
 
 
-let locations = [], allTools = [], queue = [];
+let locations = [], allTools = [];
 let sortCol = 'id', sortAsc = true;
 let modalToolId = null, selectedStatus = null;
 
@@ -613,13 +602,10 @@ async function suggestNextId() {
 }
 
 // ── Add Tool ──────────────────────────────────────────
-// Returns the next available numeric ID as a zero-padded 6-digit string
-// Compares numerically so sheet value 1 and "000001" are treated as the same
 function calcNextId() {
-  const nums = [
-    ...queue.map(q => parseInt(String(q.id).replace(/\D/g,''), 10)),
-    ...allTools.map(t => parseInt(String(t.id||'').replace(/\D/g,''), 10))
-  ].filter(n => !isNaN(n) && n > 0);
+  const nums = allTools
+    .map(t => parseInt(String(t.id||'').replace(/\D/g,''), 10))
+    .filter(n => !isNaN(n) && n > 0);
   return String(nums.length ? Math.max(...nums) + 1 : 1).padStart(3, '0');
 }
 
@@ -634,55 +620,39 @@ async function submitAddTool() {
   if (!location || !name) { showToast('Please fill in location and name.', 'error'); return; }
 
   const toolId = calcNextId();
-
   const btn = document.getElementById('add-submit');
-  btn.disabled = true; btn.textContent = 'Checking…';
+  btn.disabled = true; btn.textContent = 'Saving…';
+
   try {
+    // Verify ID isn't already taken
     const check = await api({ action: 'checkToolId', toolId });
     if (check.exists) {
-      // Sheet has a tool with this numeric ID — force allTools to reload then retry
-      showToast('ID conflict detected, refreshing tool list…', 'warn');
+      showToast('ID conflict — refreshing and retrying…', 'warn');
       const d = await api({ action: 'getAllTools' });
       allTools = d.tools || [];
-      btn.disabled = false; btn.textContent = 'Add to Queue';
       refreshIdDisplay();
+      btn.disabled = false; btn.textContent = 'Add Tool';
       return;
     }
-  } catch(e) { showToast('Could not verify ID: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Add to Queue'; return; }
 
-  queue.push({ id: toolId, name, homeLocation: location });
-  renderQueue();
-  document.getElementById('add-name').value = '';
-  refreshIdDisplay();
-  document.getElementById('add-name').focus();
-  btn.disabled = false; btn.textContent = 'Add to Queue';
-}
-
-function renderQueue() {
-  const card = document.getElementById('queue-card');
-  document.getElementById('queue-count').textContent = queue.length;
-  if (!queue.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-  document.getElementById('queue-body').innerHTML = queue.map((t, i) => `
-    <tr>
-      <td><span class="badge-id">${t.id}</span></td>
-      <td>${t.name}</td><td>${t.homeLocation}</td>
-      <td><button class="btn-status" onclick="queue.splice(${i},1);renderQueue()">✕</button></td>
-    </tr>`).join('');
-}
-
-async function commitQueue() {
-  if (!queue.length) return;
-  const btn = document.getElementById('commit-btn');
-  btn.disabled = true; btn.textContent = 'Saving…';
-  try {
-    const r = await api({ action: 'addTools', tools: JSON.stringify(queue) });
+    // Save directly to sheet — no queue
+    const r = await api({ action: 'addTools', tools: JSON.stringify([{ id: toolId, name, homeLocation: location }]) });
     if (r.success) {
-      showToast('✓ ' + queue.length + ' tool(s) added.', 'success');
-      queue = []; renderQueue(); await loadCategories();
-    } else showToast('Error: ' + (r.error || 'Unknown'), 'error');
-  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
-  btn.disabled = false; btn.textContent = 'Save All to Spreadsheet';
+      showToast('✓ Tool ' + toolId + ' — ' + name + ' added.', 'success');
+      // Reload allTools so next ID calculates correctly
+      const d = await api({ action: 'getAllTools' });
+      allTools = d.tools || [];
+      refreshIdDisplay();
+      document.getElementById('add-name').value = '';
+      document.getElementById('add-name').focus();
+    } else {
+      showToast('Error: ' + (r.error || 'Unknown'), 'error');
+    }
+  } catch(e) {
+    showToast('Failed: ' + e.message, 'error');
+  }
+
+  btn.disabled = false; btn.textContent = 'Add Tool';
 }
 
 // ── Tool List ─────────────────────────────────────────
